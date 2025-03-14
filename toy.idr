@@ -64,6 +64,10 @@ pickRightFromElem Here
 pickRightFromElem (There xElemXs)
   = PickLeft (pickRightFromElem xElemXs)
 
+-----------------
+-- typed terms --
+-----------------
+
 mutual
   data Cmd : List Ty -> List Ty -> Type where
     Cut
@@ -145,6 +149,11 @@ mutual
       -> Consumer g a d
       -> Consumer g' b d'
       -> Consumer gg' (Par a b) dd'
+
+
+----------------------------
+-- example typed programs --
+----------------------------
 
 cmdFromConsumer
    : (g : List Ty)
@@ -251,6 +260,156 @@ localCompletenessOfPar {a} {b}
             [a, b] (PickLeft $ PickRight Nil)
             (CoVar a)
             (CoVar b))))
+
+
+-------------------
+-- untyped terms --
+-------------------
+
+mutual
+  data UCmd : Type where
+    UCut
+       : UProducer
+      -> UConsumer
+      -> UCmd
+
+  data UProducer : Type where
+    UVar
+       : String
+      -> UProducer
+    UMu
+       : String
+      -> UCmd
+      -> UProducer
+    ULam
+       : String
+      -> String
+      -> UCmd
+      -> UProducer
+    UPair
+       : UProducer
+      -> UProducer
+      -> UProducer
+    ULeft
+       : UProducer
+      -> UProducer
+    URight
+       : UProducer
+      -> UProducer
+    UCoMatchWith
+       : UProducer
+      -> UProducer
+      -> UProducer
+    UCoMatchPar
+       : String
+      -> String
+      -> UCmd
+      -> UProducer
+
+  data UConsumer : Type where
+    UCoVar
+       : String
+      -> UConsumer
+    UCoMu
+       : String
+      -> UCmd
+      -> UConsumer
+    UApp
+       : UProducer
+      -> UConsumer
+      -> UConsumer
+    UMatchPair
+       : String
+      -> String
+      -> UCmd
+      -> UConsumer
+    UMatchSum
+       : UConsumer
+      -> UConsumer
+      -> UConsumer
+    UFst
+       : UConsumer
+      -> UConsumer
+    USnd
+       : UConsumer
+      -> UConsumer
+    UHandlePar
+       : UConsumer
+      -> UConsumer
+      -> UConsumer
+
+
+------------------------------
+-- example untyped programs --
+------------------------------
+
+ucmdFromConsumer
+   : String
+  -> UConsumer
+  -> UCmd
+ucmdFromConsumer x consumer
+  = UCut (UVar x) consumer
+
+ucmdFromProducer
+   : String
+  -> UProducer
+  -> UCmd
+ucmdFromProducer x producer
+  = UCut producer (UCoVar x)
+
+ulocalCompletenessOfImp
+   : UCmd
+ulocalCompletenessOfImp
+  = ucmdFromProducer "out"
+      (ULam "a" "b"
+        (ucmdFromConsumer "in"
+          (UApp
+            (UVar "a")
+            (UCoVar "b"))))
+
+ulocalCompletenessOfTen
+   : UCmd
+ulocalCompletenessOfTen
+  = ucmdFromConsumer "in"
+      (UMatchPair "a" "b"
+        (ucmdFromProducer "out"
+          (UPair
+            (UVar "a")
+            (UVar "b"))))
+
+ulocalCompletenessOfSum
+   : UCmd
+ulocalCompletenessOfSum
+  = ucmdFromConsumer "in"
+      (UMatchSum
+        (UCoMu "a"
+          (ucmdFromProducer "out"
+            (ULeft (UVar "a"))))
+        (UCoMu "b"
+          (ucmdFromProducer "out"
+            (URight (UVar "b")))))
+
+ulocalCompletenessOfWith
+   : UCmd
+ulocalCompletenessOfWith
+  = ucmdFromProducer "out"
+      (UCoMatchWith
+        (UMu "a"
+          (ucmdFromConsumer "in"
+            (UFst (UCoVar "a"))))
+        (UMu "b"
+          (ucmdFromConsumer "in"
+            (USnd (UCoVar "b")))))
+
+ulocalCompletenessOfPar
+   : UCmd
+ulocalCompletenessOfPar
+  = ucmdFromProducer "out"
+      (UCoMatchPar "a" "b"
+        (ucmdFromConsumer "in"
+          (UHandlePar
+            (UCoVar "a")
+            (UCoVar "b"))))
 
 
 main : IO ()
