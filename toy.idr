@@ -1,3 +1,5 @@
+import UnionFind
+
 data Ty : Type where
   Imp : Ty -> Ty -> Ty
   Ten : Ty -> Ty -> Ty
