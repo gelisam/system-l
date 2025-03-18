@@ -1,12 +1,78 @@
 import ExceptT
 import UnionFind
 
+
+-----------
+-- types --
+-----------
+
+-- defined early so that the helpers below don't have to be polymorphic
+
+data TyF : Type -> Type where
+  ImpF : r -> r -> TyF r
+  TenF : r -> r -> TyF r
+  SumF : r -> r -> TyF r
+  WithF : r -> r -> TyF r
+  ParF : r -> r -> TyF r
+
+implementation Functor TyF where
+  map f (ImpF a b)
+    = ImpF (f a) (f b)
+  map f (TenF a b)
+    = TenF (f a) (f b)
+  map f (SumF a b)
+    = SumF (f a) (f b)
+  map f (WithF a b)
+    = WithF (f a) (f b)
+  map f (ParF a b)
+    = ParF (f a) (f b)
+
+implementation Foldable TyF where
+  foldr f z (ImpF a b)
+    = f a (f b z)
+  foldr f z (TenF a b)
+    = f a (f b z)
+  foldr f z (SumF a b)
+    = f a (f b z)
+  foldr f z (WithF a b)
+    = f a (f b z)
+  foldr f z (ParF a b)
+    = f a (f b z)
+
+implementation Traversable TyF where
+  traverse f (ImpF a b)
+    = ImpF <$> f a <*> f b
+  traverse f (TenF a b)
+    = TenF <$> f a <*> f b
+  traverse f (SumF a b)
+    = SumF <$> f a <*> f b
+  traverse f (WithF a b)
+    = WithF <$> f a <*> f b
+  traverse f (ParF a b)
+    = ParF <$> f a <*> f b
+
 data Ty : Type where
-  Imp : Ty -> Ty -> Ty
-  Ten : Ty -> Ty -> Ty
-  Sum : Ty -> Ty -> Ty
-  With : Ty -> Ty -> Ty
-  Par : Ty -> Ty -> Ty
+  MkTy : TyF Ty -> Ty
+
+Imp : Ty -> Ty -> Ty
+Imp a b = MkTy (ImpF a b)
+
+Ten : Ty -> Ty -> Ty
+Ten a b = MkTy (TenF a b)
+
+Sum : Ty -> Ty -> Ty
+Sum a b = MkTy (SumF a b)
+
+With : Ty -> Ty -> Ty
+With a b = MkTy (WithF a b)
+
+Par : Ty -> Ty -> Ty
+Par a b = MkTy (ParF a b)
+
+
+-------------
+-- helpers --
+-------------
 
 data Elem : Ty -> List Ty -> Type where
   Here
@@ -66,6 +132,7 @@ pickRightFromElem Here
   = PickRight allLeft
 pickRightFromElem (There xElemXs)
   = PickLeft (pickRightFromElem xElemXs)
+
 
 -----------------
 -- typed terms --
