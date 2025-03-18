@@ -2,4 +2,7 @@
 set -e
 
 clear
-idris2 toy.idr -o ./toy
+idris2 \
+  --source-dir src \
+  --output-dir build \
+  --exec main src/toy.idr
