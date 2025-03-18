@@ -5,4 +5,4 @@ clear
 idris2 \
   --source-dir src \
   --output-dir build \
-  --exec main src/toy.idr
+  --exec main src/main.idr
