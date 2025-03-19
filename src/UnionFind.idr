@@ -4,6 +4,7 @@ import Data.Maybe
 import Data.SortedMap
 import Control.Monad.State
 
+
 -- A `Node` points to a value of type `Maybe v`. If it has been unioned with
 -- other Nodes, all the nodes in the set points to the same `Maybe v`.
 public export
