@@ -99,6 +99,35 @@ ucmdFromProducer x producer
   = UCut producer (UCoVar x)
 
 public export
+uanihilateSingleton
+   : String
+  -> String
+  -> UCmd
+uanihilateSingleton x cox
+  = UCut (UVar x) (UCoVar cox)
+
+public export
+uswapVars
+   : String
+  -> String
+  -> UCmd
+  -> UCmd
+uswapVars a b cmd
+  = ucmdFromConsumer a
+      (UCoMu a cmd)
+
+
+public export
+uswapCoVars
+   : String
+  -> String
+  -> UCmd
+  -> UCmd
+uswapCoVars a b cmd
+  = ucmdFromProducer a
+      (UMu a cmd)
+
+public export
 ulocalCompletenessOfImp
    : UCmd
 ulocalCompletenessOfImp

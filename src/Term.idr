@@ -126,6 +126,37 @@ cmdFromProducer {g} {a} d xElemXs producer
       producer
       (CoVar a)
 
+public export
+anihilateSingleton
+   : {a : Ty}
+  -> Cmd [a] [a]
+anihilateSingleton {a}
+  = Cut
+      [a] allLeft
+      [a] allRight
+      (Var a)
+      (CoVar a)
+
+public export
+swapVars
+   : {a, b : Ty}
+  -> {g, d : List Ty}
+  -> Cmd (a :: b :: g) d
+  -> Cmd (b :: a :: g) d
+swapVars {a} {b} {g} {d} cmd
+  = cmdFromConsumer (b :: a :: g) (There Here)
+      (CoMu a cmd)
+
+public export
+swapCoVars
+   : {a, b : Ty}
+  -> {g, d : List Ty}
+  -> Cmd g (a :: b :: d)
+  -> Cmd g (b :: a :: d)
+swapCoVars {a} {b} {g} {d} cmd
+  = cmdFromProducer (b :: a :: d) (There Here)
+      (Mu a cmd)
+
 -- localCompletenessOfImp f
 --   = \x -> f x
 public export
