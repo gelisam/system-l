@@ -10,7 +10,8 @@ mutual
   public export
   data ICmd : List Ty -> List Ty -> Type where
     ICut
-       : (gg' : List Ty)
+       : (a : Ty)
+      -> (gg' : List Ty)
       -> Cover g g' gg'
       -> (dd' : List Ty)
       -> Cover d d' dd'
@@ -28,10 +29,12 @@ mutual
       -> ICmd g (a::d)
       -> IProducer g a d
     ILam
-       : ICmd (a::g) (b::d)
+       : (a, b : Ty)
+      -> ICmd (a::g) (b::d)
       -> IProducer g (Imp a b) d
     IPair
-       : (gg' : List Ty)
+       : (a, b : Ty)
+      -> (gg' : List Ty)
       -> Cover g g' gg'
       -> (dd' : List Ty)
       -> Cover d d' dd'
@@ -39,17 +42,21 @@ mutual
       -> IProducer g' b d'
       -> IProducer gg' (Ten a b) dd'
     ILeft
-       : IProducer g a d
+       : (a : Ty)
+      -> IProducer g a d
       -> IProducer g (Sum a b) d
     IRight
-       : IProducer g b d
+       : (b : Ty)
+      -> IProducer g b d
       -> IProducer g (Sum a b) d
     ICoMatchWith
-       : IProducer g a d
+       : (a, b : Ty)
+      -> IProducer g a d
       -> IProducer g b d
       -> IProducer g (With a b) d
     ICoMatchPar
-       : ICmd g (a::b::d)
+       : (a, b : Ty)
+      -> ICmd g (a::b::d)
       -> IProducer g (Par a b) d
 
   public export
@@ -62,7 +69,8 @@ mutual
       -> ICmd (a::g) d
       -> IConsumer g a d
     IApp
-       : (gg' : List Ty)
+       : (a, b : Ty)
+      -> (gg' : List Ty)
       -> Cover g g' gg'
       -> (dd' : List Ty)
       -> Cover d d' dd'
@@ -70,20 +78,25 @@ mutual
       -> IConsumer g' b d'
       -> IConsumer gg' (Imp a b) dd'
     IMatchPair
-       : ICmd (a::b::g) d
+       : (a, b : Ty)
+      -> ICmd (a::b::g) d
       -> IConsumer g (Ten a b) d
     IMatchSum
-       : IConsumer g a d
+       : (a, b : Ty)
+      -> IConsumer g a d
       -> IConsumer g b d
       -> IConsumer g (Sum a b) d
     IFst
-       : IConsumer g a d
+       : (a : Ty)
+      -> IConsumer g a d
       -> IConsumer g (With a b) d
     ISnd
-       : IConsumer g b d
+       : (b : Ty)
+      -> IConsumer g b d
       -> IConsumer g (With a b) d
     IHandlePar
-       : (gg' : List Ty)
+       : (a, b : Ty)
+      -> (gg' : List Ty)
       -> Cover g g' gg'
       -> (dd' : List Ty)
       -> Cover d d' dd'
@@ -106,6 +119,7 @@ icmdFromConsumer
   -> ICmd g d
 icmdFromConsumer g {a} {d} xElemXs consumer
   = ICut
+      a
       g (pickLeftFromElem xElemXs)
       d allRight
       (IVar a)
@@ -121,6 +135,7 @@ icmdFromProducer
   -> ICmd g d
 icmdFromProducer {g} {a} d xElemXs producer
   = ICut
+      a
       g allLeft
       d (pickRightFromElem xElemXs)
       producer
@@ -132,6 +147,7 @@ ianihilateSingleton
   -> ICmd [a] [a]
 ianihilateSingleton {a}
   = ICut
+      a
       [a] allLeft
       [a] allRight
       (IVar a)
@@ -144,7 +160,8 @@ iswapVars
   -> ICmd (a :: b :: g) d
   -> ICmd (b :: a :: g) d
 iswapVars {a} {b} {g} {d} cmd
-  = icmdFromConsumer (b :: a :: g) (There Here)
+  = icmdFromConsumer
+      (b :: a :: g) (There Here)
       (ICoMu a cmd)
 
 public export
@@ -154,7 +171,8 @@ iswapCoVars
   -> ICmd g (a :: b :: d)
   -> ICmd g (b :: a :: d)
 iswapCoVars {a} {b} {g} {d} cmd
-  = icmdFromProducer (b :: a :: d) (There Here)
+  = icmdFromProducer
+      (b :: a :: d) (There Here)
       (IMu a cmd)
 
 -- localCompletenessOfImp f
@@ -164,10 +182,14 @@ ilocalCompletenessOfImp
    : {a, b : Ty}
   -> ICmd [Imp a b] [Imp a b]
 ilocalCompletenessOfImp {a} {b}
-  = icmdFromProducer [Imp a b] Here
+  = icmdFromProducer
+      [Imp a b] Here
       (ILam
-        (icmdFromConsumer [a, Imp a b] (There Here)
+        a b
+        (icmdFromConsumer
+          [a, Imp a b] (There Here)
           (IApp
+            a b
             [a] (PickLeft Nil)
             [b] (PickRight Nil)
             (IVar a)
@@ -181,10 +203,14 @@ ilocalCompletenessOfTen
    : {a, b : Ty}
   -> ICmd [Ten a b] [Ten a b]
 ilocalCompletenessOfTen {a} {b}
-  = icmdFromConsumer [Ten a b] Here
+  = icmdFromConsumer
+      [Ten a b] Here
       (IMatchPair
-        (icmdFromProducer [Ten a b] Here
+        a b
+        (icmdFromProducer
+          [Ten a b] Here
           (IPair
+            a b
             [a, b] (PickLeft $ PickRight Nil)
             [] Nil
             (IVar a)
@@ -199,14 +225,22 @@ ilocalCompletenessOfSum
    : {a, b : Ty}
   -> ICmd [Sum a b] [Sum a b]
 ilocalCompletenessOfSum {a} {b}
-  = icmdFromConsumer [Sum a b] Here
+  = icmdFromConsumer
+      [Sum a b] Here
       (IMatchSum
+        a b
         (ICoMu a
-          (icmdFromProducer [Sum a b] Here
-            (ILeft (IVar a))))
+          (icmdFromProducer
+            [Sum a b] Here
+            (ILeft
+              a
+              (IVar a))))
         (ICoMu b
-          (icmdFromProducer [Sum a b] Here
-            (IRight (IVar b)))))
+          (icmdFromProducer
+            [Sum a b] Here
+            (IRight
+              b
+              (IVar b)))))
 
 -- fst (localCompletenessOfWith aWithB)
 --   = fst aWithB
@@ -217,24 +251,36 @@ ilocalCompletenessOfWith
    : {a, b : Ty}
   -> ICmd [With a b] [With a b]
 ilocalCompletenessOfWith {a} {b}
-  = icmdFromProducer [With a b] Here
+  = icmdFromProducer
+      [With a b] Here
       (ICoMatchWith
+        a b
         (IMu a
-          (icmdFromConsumer [With a b] Here
-            (IFst (ICoVar a))))
+          (icmdFromConsumer
+            [With a b] Here
+            (IFst
+              a
+              (ICoVar a))))
         (IMu b
-          (icmdFromConsumer [With a b] Here
-            (ISnd (ICoVar b)))))
+          (icmdFromConsumer
+            [With a b] Here
+            (ISnd
+              b
+              (ICoVar b)))))
 
 public export
 ilocalCompletenessOfPar
    : {a, b : Ty}
   -> ICmd [Par a b] [Par a b]
 ilocalCompletenessOfPar {a} {b}
-  = icmdFromProducer [Par a b] Here
+  = icmdFromProducer
+      [Par a b] Here
       (ICoMatchPar
-        (icmdFromConsumer [Par a b] Here
+        a b
+        (icmdFromConsumer
+          [Par a b] Here
           (IHandlePar
+            a b
             [] Nil
             [a, b] (PickLeft $ PickRight Nil)
             (ICoVar a)
