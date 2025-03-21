@@ -83,27 +83,27 @@ mutual
 ------------------------------
 
 public export
-ucmdFromConsumer
+uconsume
    : String
   -> UConsumer
   -> UCmd
-ucmdFromConsumer x consumer
+uconsume x consumer
   = UCut (UVar x) consumer
 
 public export
-ucmdFromProducer
+uproduce
    : String
   -> UProducer
   -> UCmd
-ucmdFromProducer x producer
+uproduce x producer
   = UCut producer (UCoVar x)
 
 public export
-uanihilateSingleton
+uanihilate
    : String
   -> String
   -> UCmd
-uanihilateSingleton x cox
+uanihilate x cox
   = UCut (UVar x) (UCoVar cox)
 
 public export
@@ -113,7 +113,7 @@ uswapVars
   -> UCmd
   -> UCmd
 uswapVars a b cmd
-  = ucmdFromConsumer a
+  = uconsume a
       (UCoMu a cmd)
 
 
@@ -124,16 +124,16 @@ uswapCoVars
   -> UCmd
   -> UCmd
 uswapCoVars a b cmd
-  = ucmdFromProducer a
+  = uproduce a
       (UMu a cmd)
 
 public export
 ulocalCompletenessOfImp
    : UCmd
 ulocalCompletenessOfImp
-  = ucmdFromProducer "out"
+  = uproduce "out"
       (ULam "a" "b"
-        (ucmdFromConsumer "in"
+        (uconsume "in"
           (UApp
             (UVar "a")
             (UCoVar "b"))))
@@ -142,9 +142,9 @@ public export
 ulocalCompletenessOfTen
    : UCmd
 ulocalCompletenessOfTen
-  = ucmdFromConsumer "in"
+  = uconsume "in"
       (UMatchPair "a" "b"
-        (ucmdFromProducer "out"
+        (uproduce "out"
           (UPair
             (UVar "a")
             (UVar "b"))))
@@ -153,35 +153,35 @@ public export
 ulocalCompletenessOfSum
    : UCmd
 ulocalCompletenessOfSum
-  = ucmdFromConsumer "in"
+  = uconsume "in"
       (UMatchSum
         (UCoMu "a"
-          (ucmdFromProducer "out"
+          (uproduce "out"
             (ULeft (UVar "a"))))
         (UCoMu "b"
-          (ucmdFromProducer "out"
+          (uproduce "out"
             (URight (UVar "b")))))
 
 public export
 ulocalCompletenessOfWith
    : UCmd
 ulocalCompletenessOfWith
-  = ucmdFromProducer "out"
+  = uproduce "out"
       (UCoMatchWith
         (UMu "a"
-          (ucmdFromConsumer "in"
+          (uconsume "in"
             (UFst (UCoVar "a"))))
         (UMu "b"
-          (ucmdFromConsumer "in"
+          (uconsume "in"
             (USnd (UCoVar "b")))))
 
 public export
 ulocalCompletenessOfPar
    : UCmd
 ulocalCompletenessOfPar
-  = ucmdFromProducer "out"
+  = uproduce "out"
       (UCoMatchPar "a" "b"
-        (ucmdFromConsumer "in"
+        (uconsume "in"
           (UHandlePar
             (UCoVar "a")
             (UCoVar "b"))))
