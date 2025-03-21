@@ -98,6 +98,22 @@ uproduce
 uproduce x producer
   = UCut producer (UCoVar x)
 
+uletVar
+   : String
+  -> UProducer
+  -> UCmd
+  -> UCmd
+uletVar x producer body
+  = UCut producer (UCoMu x body)
+
+uletCoVar
+   : String
+  -> UConsumer
+  -> UCmd
+  -> UCmd
+uletCoVar x consumer body
+  = UCut (UMu x body) consumer
+
 public export
 uanihilate
    : String
@@ -105,27 +121,6 @@ uanihilate
   -> UCmd
 uanihilate x cox
   = UCut (UVar x) (UCoVar cox)
-
-public export
-uswapVars
-   : String
-  -> String
-  -> UCmd
-  -> UCmd
-uswapVars a b cmd
-  = uconsume a
-      (UCoMu a cmd)
-
-
-public export
-uswapCoVars
-   : String
-  -> String
-  -> UCmd
-  -> UCmd
-uswapCoVars a b cmd
-  = uproduce a
-      (UMu a cmd)
 
 public export
 ulocalCompletenessOfImp

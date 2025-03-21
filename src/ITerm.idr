@@ -141,6 +141,40 @@ iproduce {g} {a} d aElemD producer
       producer
       (ICoVar a)
 
+iletVar
+   : (a : Ty)
+  -> (gg' : List Ty)
+  -> Cover g g' gg'
+  -> (dd' : List Ty)
+  -> Cover d d' dd'
+  -> IProducer g a d
+  -> ICmd (a :: g') d'
+  -> ICmd gg' dd'
+iletVar a gg' gCover dd' dCover producer body
+  = ICut
+      a
+      gg' gCover
+      dd' dCover
+      producer
+      (ICoMu a body)
+
+iletCoVar
+   : (a : Ty)
+  -> (gg' : List Ty)
+  -> Cover g g' gg'
+  -> (dd' : List Ty)
+  -> Cover d d' dd'
+  -> IConsumer g a d
+  -> ICmd g' (a :: d')
+  -> ICmd gg' dd'
+iletCoVar a gg' gCover dd' dCover consumer body
+  = ICut
+      a
+      gg' (flipCover gCover)
+      dd' (flipCover dCover)
+      (IMu a body)
+      consumer
+
 public export
 ianihilate
    : {a : Ty}
@@ -154,25 +188,29 @@ ianihilate {a}
       (ICoVar a)
 
 public export
-iswapVars
-   : {a, b : Ty}
-  -> {g, d : List Ty}
-  -> ICmd (a :: b :: g) d
-  -> ICmd (b :: a :: g) d
-iswapVars {a} {b} {g} {d} cmd
+ibringVarToFront
+   : (a : Ty)
+  -> (g : List Ty)
+  -> (aElemG : Elem a g)
+  -> {d : List Ty}
+  -> ICmd (a :: allButElem aElemG) d
+  -> ICmd g d
+ibringVarToFront a g aElemG cmd
   = iconsume
-      (b :: a :: g) (There Here)
+      g aElemG
       (ICoMu a cmd)
 
 public export
-iswapCoVars
-   : {a, b : Ty}
-  -> {g, d : List Ty}
-  -> ICmd g (a :: b :: d)
-  -> ICmd g (b :: a :: d)
-iswapCoVars {a} {b} {g} {d} cmd
+ibringCoVarToFront
+   : (a : Ty)
+  -> {g : List Ty}
+  -> (d : List Ty)
+  -> (aElemD : Elem a d)
+  -> ICmd g (a :: allButElem aElemD)
+  -> ICmd g d
+ibringCoVarToFront a d aElemD cmd
   = iproduce
-      (b :: a :: d) (There Here)
+      d aElemD
       (IMu a cmd)
 
 -- localCompletenessOfImp f

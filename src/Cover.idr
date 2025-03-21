@@ -53,3 +53,14 @@ pickRightFromElem Here
   = PickRight allLeft
 pickRightFromElem (There xElemXs)
   = PickLeft (pickRightFromElem xElemXs)
+
+public export
+flipCover
+   : Cover g g' gg'
+  -> Cover g' g gg'
+flipCover Nil
+  = Nil
+flipCover (PickLeft cover)
+  = PickRight (flipCover cover)
+flipCover (PickRight cover)
+  = PickLeft (flipCover cover)
