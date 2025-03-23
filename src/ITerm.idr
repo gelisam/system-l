@@ -7,6 +7,7 @@ import Ty
 
 
 mutual
+  -- `ICmd [a, b] [c, d]` is equivalent to `ICmd [] [Imp (Ten a b) (Par c d)]`.
   public export
   data ICmd : List Ty -> List Ty -> Type where
     ICut
@@ -19,6 +20,7 @@ mutual
       -> IConsumer g' a d'
       -> ICmd gg' dd'
 
+  -- `IProducer g a d` is equivalent to `ICmd g (a :: d)`.
   public export
   data IProducer : List Ty -> Ty -> List Ty -> Type where
     IVar
@@ -59,6 +61,7 @@ mutual
       -> ICmd g (a::b::d)
       -> IProducer g (Par a b) d
 
+  -- `IConsumer g a d` is equivalent to `Cmd (a :: g) d`.
   public export
   data IConsumer : List Ty -> Ty -> List Ty -> Type where
     ICoVar
