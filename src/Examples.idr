@@ -173,6 +173,115 @@ ibringCoVarToFront a d aElemD cmd
 
 ----------------------------------------
 
+public export
+iequivalence
+   : {a, b, c, d : Ty}
+  -> ICmd [a, b] [c, d]
+  -> ICmd [] [Imp (Ten a b) (Par c d)]
+iequivalence {a} {b} {c} {d} cmd
+  = iproduce
+      [Imp (Ten a b) (Par c d)] Here
+      (ILam
+        (Ten a b) (Par c d)
+        (iproduce
+          [Par c d] Here
+          (ICoMatchPar
+            c d
+            (iconsume
+              [Ten a b] Here
+              (IMatchPair
+                a b
+                cmd)))))
+
+public export
+uequivalence
+   : UCmd
+  -> UCmd
+uequivalence cmd
+  = uproduce "out"
+      (ULam "ab" "cd"
+        (uproduce "cd"
+          (UCoMatchPar "c" "d"
+            (uconsume "ab"
+              (UMatchPair "a" "b"
+                cmd)))))
+
+----------------------------------------
+
+public export
+icurry
+   : {a, b, c : Ty}
+  -> ICmd [a, b] [c]
+  -> ICmd [] [Imp a (Imp b c)]
+icurry {a} {b} {c} cmd
+  = iproduce
+      [Imp a (Imp b c)] Here
+      (ILam
+        a (Imp b c)
+        (iproduce
+          [Imp b c] Here
+          (ILam
+            b c
+            (the (ICmd [b, a] [c])
+              (ibringVarToFront
+                a
+                [b, a] (There Here)
+                cmd)))))
+
+public export
+ucurry
+   : UCmd
+  -> UCmd
+ucurry cmd
+  = uproduce "out"
+      (ULam "a" "b2b"
+        (uproduce "b2b"
+          (ULam "b" "c"
+            cmd)))
+
+----------------------------------------
+
+public export
+iuncurry
+   : {a, b, c : Ty}
+  -> ICmd [] [Imp a (Imp b c)]
+  -> ICmd [a, b] [c]
+iuncurry {a} {b} {c} cmd
+  = ICut
+      (Imp a (Imp b c))
+      [a, b] allRight
+      [c] allRight
+      (IMu
+        (Imp a (Imp b c))
+        cmd)
+      (IApp
+        a (Imp b c)
+        [a, b] (PickLeft $ PickRight Nil)
+        [c] (PickRight Nil)
+        (IVar a)
+        (IApp
+          b c
+          [b] (PickLeft Nil)
+          [c] (PickRight Nil)
+          (IVar b)
+          (ICoVar c)))
+
+public export
+uuncurry
+   : UCmd
+  -> UCmd
+uuncurry cmd
+  = UCut
+      (UMu "a2b2c"
+        cmd)
+      (UApp
+        (UVar "a")
+        (UApp
+          (UVar "b")
+          (UCoVar "c")))
+
+----------------------------------------
+
 -- localCompletenessOfImp f
 --   = \x -> f x
 public export
