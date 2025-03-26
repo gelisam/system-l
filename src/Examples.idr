@@ -257,13 +257,17 @@ icurry {a} {b} {c} cmd
 
 public export
 ucurry
-   : UCmd
+   : String
+  -> String
+  -> String
+  -> String
   -> UCmd
-ucurry cmd
-  = uproduce "out"
-      (ULam "a" "b2b"
-        (uproduce "b2b"
-          (ULam "b" "c"
+  -> UCmd
+ucurry a b c a2b2c cmd
+  = uproduce a2b2c
+      (ULam a "b2c"
+        (uproduce "b2c"
+          (ULam b c
             cmd)))
 
 ----------------------------------------
@@ -295,17 +299,21 @@ iuncurry {a} {b} {c} cmd
 
 public export
 uuncurry
-   : UCmd
+   : String
+  -> String
+  -> String
+  -> String
   -> UCmd
-uuncurry cmd
+  -> UCmd
+uuncurry a b c a2b2c cmd
   = UCut
-      (UMu "a2b2c"
+      (UMu a2b2c
         cmd)
       (UApp
-        (UVar "a")
+        (UVar a)
         (UApp
-          (UVar "b")
-          (UCoVar "c")))
+          (UVar b)
+          (UCoVar c)))
 
 ----------------------------------------
 
