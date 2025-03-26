@@ -240,51 +240,45 @@ public export
 icurry
    : {a, b, c : Ty}
   -> ICmd [a, b] [c]
-  -> ICmd [] [Imp a (Imp b c)]
+  -> IProducer [] (Imp a (Imp b c)) []
 icurry {a} {b} {c} cmd
-  = iproduce
-      [Imp a (Imp b c)] Here
-      (ILam
-        a (Imp b c)
-        (iproduce
-          [Imp b c] Here
-          (ILam
-            b c
-            (the (ICmd [b, a] [c])
-              (ibringVarToFront
-                [b, a] (There Here)
-                cmd)))))
+  = ILam
+      a (Imp b c)
+      (iproduce
+        [Imp b c] Here
+        (ILam
+          b c
+          (the (ICmd [b, a] [c])
+            (ibringVarToFront
+              [b, a] (There Here)
+              cmd))))
 
 public export
 ucurry
    : String
   -> String
   -> String
-  -> String
   -> UCmd
-  -> UCmd
-ucurry a b c a2b2c cmd
-  = uproduce a2b2c
-      (ULam a "b2c"
-        (uproduce "b2c"
-          (ULam b c
-            cmd)))
+  -> UProducer
+ucurry a b c cmd
+  = ULam a "b2c"
+      (uproduce "b2c"
+        (ULam b c
+          cmd))
 
 ----------------------------------------
 
 public export
 iuncurry
    : {a, b, c : Ty}
-  -> ICmd [] [Imp a (Imp b c)]
+  -> IProducer [] (Imp a (Imp b c)) []
   -> ICmd [a, b] [c]
-iuncurry {a} {b} {c} cmd
+iuncurry {a} {b} {c} pa2b2c
   = ICut
       (Imp a (Imp b c))
       [a, b] allRight
       [c] allRight
-      (IMu
-        (Imp a (Imp b c))
-        cmd)
+      pa2b2c
       (IApp
         a (Imp b c)
         [a, b] (PickLeft $ PickRight Nil)
@@ -302,13 +296,11 @@ uuncurry
    : String
   -> String
   -> String
-  -> String
+  -> UProducer
   -> UCmd
-  -> UCmd
-uuncurry a b c a2b2c cmd
+uuncurry a b c pa2b2c
   = UCut
-      (UMu a2b2c
-        cmd)
+      pa2b2c
       (UApp
         (UVar a)
         (UApp
