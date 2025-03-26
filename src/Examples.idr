@@ -209,6 +209,34 @@ uequivalence cmd
 ----------------------------------------
 
 public export
+iapply
+   : {a, b : Ty}
+  -> ICmd [Imp a b, a] [b]
+iapply {a} {b}
+  = iconsume
+      [Imp a b, a] Here
+      (IApp
+        a b
+        [a] allLeft
+        [b] allRight
+        (IVar a)
+        (ICoVar b))
+
+public export
+uapply
+   : String
+  -> String
+  -> String
+  -> UCmd
+uapply f in_ out
+  = uconsume f
+      (UApp
+        (UVar in_)
+        (UCoVar out))
+
+----------------------------------------
+
+public export
 icurry
    : {a, b, c : Ty}
   -> ICmd [a, b] [c]
