@@ -141,13 +141,13 @@ uanihilate x cox
 
 public export
 ibringVarToFront
-   : (a : Ty)
+   : {a : Ty}
   -> (g : List Ty)
   -> (aElemG : Elem a g)
   -> {d : List Ty}
   -> ICmd (a :: allButElem aElemG) d
   -> ICmd g d
-ibringVarToFront a g aElemG cmd
+ibringVarToFront {a} g aElemG cmd
   = iconsume
       g aElemG
       (ICoMu a cmd)
@@ -158,13 +158,13 @@ ibringVarToFront a g aElemG cmd
 
 public export
 ibringCoVarToFront
-   : (a : Ty)
+   : {a : Ty}
   -> {g : List Ty}
   -> (d : List Ty)
   -> (aElemD : Elem a d)
   -> ICmd g (a :: allButElem aElemD)
   -> ICmd g d
-ibringCoVarToFront a d aElemD cmd
+ibringCoVarToFront {a} d aElemD cmd
   = iproduce
       d aElemD
       (IMu a cmd)
@@ -224,7 +224,6 @@ icurry {a} {b} {c} cmd
             b c
             (the (ICmd [b, a] [c])
               (ibringVarToFront
-                a
                 [b, a] (There Here)
                 cmd)))))
 
