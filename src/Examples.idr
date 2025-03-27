@@ -309,6 +309,79 @@ uuncurry a b c pa2b2c
 
 ----------------------------------------
 
+public export
+icurryBridge
+   : {a, b, c : Ty}
+  -> ICmd [a] [b, c]
+  -> IConsumer [] (Bridge c (Bridge b a)) []
+icurryBridge {a} {b} {c} cmd
+  = IMatchBridge
+      c (Bridge b a)
+      (iconsume
+        [Bridge b a] Here
+        (IMatchBridge
+          b a
+          cmd))
+
+public export
+ucurryBridge
+   : String
+  -> String
+  -> String
+  -> UCmd
+  -> UConsumer
+ucurryBridge a b c cmd
+  = UMatchBridge
+      c "bBridgeA"
+      (uconsume
+        "bBridgeA"
+        (UMatchBridge
+          b a
+          cmd))
+
+----------------------------------------
+
+public export
+iuncurryBridge
+   : {a, b, c : Ty}
+  -> IConsumer [] (Bridge c (Bridge b a)) []
+  -> ICmd [a] [b, c]
+iuncurryBridge {a} {b} {c} cCBridgeBBridgeA
+  = ICut
+      (Bridge c (Bridge b a))
+      [a] allLeft
+      [b, c] allLeft
+      (IConnect
+        c (Bridge b a)
+        [a] allRight
+        [b, c] (PickRight $ PickLeft Nil)
+        (ICoVar c)
+        (IConnect
+          b a
+          [a] allRight
+          [b] allLeft
+          (ICoVar b)
+          (IVar a)))
+      cCBridgeBBridgeA
+
+public export
+uuncurryBridge
+   : String
+  -> String
+  -> String
+  -> UConsumer
+  -> UCmd
+uuncurryBridge a b c cCBridgeBBridgeA
+  = UCut
+      (UConnect
+        (UCoVar c)
+        (UConnect
+          (UCoVar b)
+          (UVar a)))
+      cCBridgeBBridgeA
+
+----------------------------------------
+
 -- localCompletenessOfImp f
 --   = \x -> f x
 public export
@@ -340,6 +413,35 @@ ulocalCompletenessOfImp
             (UVar "a")
             (UCoVar "b"))))
 
+----------------------------------------
+
+ilocalCompletenessOfBridge
+   : {a, b : Ty}
+  -> ICmd [Bridge a b] [Bridge a b]
+ilocalCompletenessOfBridge {a} {b}
+  = iconsume
+      [Bridge a b] Here
+      (IMatchBridge
+        a b
+        (iproduce
+          [a, Bridge a b] (There Here)
+          (IConnect
+            a b
+            [b] allRight
+            [a] allLeft
+            (ICoVar a)
+            (IVar b))))
+
+ulocalCompletenessOfBridge
+   : UCmd
+ulocalCompletenessOfBridge
+  = uconsume "in"
+      (UMatchBridge
+        "a" "b"
+        (uproduce "out"
+          (UConnect
+            (UCoVar "a")
+            (UVar "b"))))
 ----------------------------------------
 
 -- localCompletenessOfTen aTenB

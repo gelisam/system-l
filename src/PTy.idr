@@ -23,6 +23,10 @@ PImp : PTy -> PTy -> PTy
 PImp a b = Ctor (ImpF a b)
 
 public export
+PBridge : PTy -> PTy -> PTy
+PBridge a b = Ctor (BridgeF a b)
+
+public export
 PTen : PTy -> PTy -> PTy
 PTen a b = Ctor (TenF a b)
 

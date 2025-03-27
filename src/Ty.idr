@@ -5,6 +5,7 @@ module Ty
 public export
 data TyF : Type -> Type where
   ImpF : r -> r -> TyF r
+  BridgeF : r -> r -> TyF r
   TenF : r -> r -> TyF r
   SumF : r -> r -> TyF r
   WithF : r -> r -> TyF r
@@ -14,6 +15,8 @@ public export
 implementation Functor TyF where
   map f (ImpF a b)
     = ImpF (f a) (f b)
+  map f (BridgeF a b)
+    = BridgeF (f a) (f b)
   map f (TenF a b)
     = TenF (f a) (f b)
   map f (SumF a b)
@@ -26,6 +29,8 @@ implementation Functor TyF where
 public export
 implementation Foldable TyF where
   foldr f z (ImpF a b)
+    = f a (f b z)
+  foldr f z (BridgeF a b)
     = f a (f b z)
   foldr f z (TenF a b)
     = f a (f b z)
@@ -40,6 +45,8 @@ public export
 implementation Traversable TyF where
   traverse f (ImpF a b)
     = ImpF <$> f a <*> f b
+  traverse f (BridgeF a b)
+    = BridgeF <$> f a <*> f b
   traverse f (TenF a b)
     = TenF <$> f a <*> f b
   traverse f (SumF a b)
@@ -56,6 +63,10 @@ data Ty : Type where
 public export
 Imp : Ty -> Ty -> Ty
 Imp a b = MkTy (ImpF a b)
+
+public export
+Bridge : Ty -> Ty -> Ty
+Bridge a b = MkTy (BridgeF a b)
 
 public export
 Ten : Ty -> Ty -> Ty

@@ -24,6 +24,10 @@ mutual
       -> String
       -> UCmd
       -> UProducer
+    UConnect
+       : UConsumer
+      -> UProducer
+      -> UProducer
     UPair
        : UProducer
       -> UProducer
@@ -56,6 +60,11 @@ mutual
     UApp
        : UProducer
       -> UConsumer
+      -> UConsumer
+    UMatchBridge
+       : String
+      -> String
+      -> UCmd
       -> UConsumer
     UMatchPair
        : String
