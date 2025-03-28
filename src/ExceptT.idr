@@ -1,5 +1,7 @@
 module ExceptT
 
+import Control.Monad.Trans
+
 
 public export
 data ExceptT : (e : Type) -> (m : Type -> Type) -> (a : Type) -> Type where
@@ -13,12 +15,6 @@ public export
 throwE : Monad m => e -> ExceptT e m a
 throwE e = MkExceptT $ do
   pure $ Left e
-
-public export
-lift : Monad m => m a -> ExceptT e m a
-lift body = MkExceptT $ do
-  a <- body
-  pure $ Right a
 
 public export
 implementation Functor m => Functor (ExceptT e m) where
@@ -46,3 +42,9 @@ implementation Monad m => Monad (ExceptT e m) where
         pure $ Left err
       Right a => do
         runExceptT $ k a
+
+public export
+implementation MonadTrans (ExceptT e) where
+  lift body = MkExceptT $ do
+    a <- body
+    pure $ Right a

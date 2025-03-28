@@ -1,8 +1,8 @@
 module UnionFind
 
+import Control.Monad.State
 import Data.Maybe
 import Data.SortedMap
-import Control.Monad.State
 
 
 -- A `Node` points to a value of type `Maybe v`. If it has been unioned with
