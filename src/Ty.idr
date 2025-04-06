@@ -61,6 +61,29 @@ implementation Show r => Show (TyF r) where
     $ "ParF " ++ showPrec App a ++ " " ++ showPrec App b
 
 public export
+implementation Eq r => Eq (TyF r) where
+  ImpF a1 b1 == ImpF a2 b2
+    = a1 == a2
+   && b1 == b2
+  BridgeF a1 b1 == BridgeF a2 b2
+    = a1 == a2
+   && b1 == b2
+  TenF a1 b1 == TenF a2 b2
+    = a1 == a2
+   && b1 == b2
+  SumF a1 b1 == SumF a2 b2
+    = a1 == a2
+   && b1 == b2
+  WithF a1 b1 == WithF a2 b2
+    = a1 == a2
+   && b1 == b2
+  ParF a1 b1 == ParF a2 b2
+    = a1 == a2
+   && b1 == b2
+  _ == _
+    = False
+
+public export
 implementation Functor TyF where
   map f (ImpF a b)
     = ImpF (f a) (f b)
@@ -125,3 +148,26 @@ implementation Show Ty where
   showPrec p (MkTy (ParF a b))
     = showParens (p /= Open)
     $ "Par " ++ showPrec App a ++ " " ++ showPrec App b
+
+public export
+implementation Eq Ty where
+  MkTy (ImpF a1 b1) == MkTy (ImpF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  MkTy (BridgeF a1 b1) == MkTy (BridgeF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  MkTy (TenF a1 b1) == MkTy (TenF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  MkTy (SumF a1 b1) == MkTy (SumF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  MkTy (WithF a1 b1) == MkTy (WithF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  MkTy (ParF a1 b1) == MkTy (ParF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  _ == _
+    = False

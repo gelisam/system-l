@@ -82,3 +82,28 @@ implementation Show PTy where
   showPrec p (Ctor (ParF a b))
     = showParens (p /= Open)
     $ "PPar " ++ showPrec App a ++ " " ++ showPrec App b
+
+public export
+implementation Eq PTy where
+  MetaVar node1 == MetaVar node2
+    = node1 == node2
+  Ctor (ImpF a1 b1) == Ctor (ImpF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  Ctor (BridgeF a1 b1) == Ctor (BridgeF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  Ctor (TenF a1 b1) == Ctor (TenF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  Ctor (SumF a1 b1) == Ctor (SumF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  Ctor (WithF a1 b1) == Ctor (WithF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  Ctor (ParF a1 b1) == Ctor (ParF a2 b2)
+    = a1 == a2
+   && b1 == b2
+  _ == _
+    = False
