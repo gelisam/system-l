@@ -1,69 +1,55 @@
-module PTy
+module PolyTy
 
 import Control.Monad.State
+import Data.String as String
 
 import Ty
 import UnionFind
 
 
 mutual
-  -- Partial Type, meaning that part of the type can be a MetaVar
+  -- Polymorphic Type, with quantified type variables
   public export
-  data PTy : Type where
-    MetaVar : Node -> PTy
-    Ctor : CTy -> PTy
-
-  -- Constructor-headed partial Type
-  public export
-  CTy : Type
-  CTy = TyF PTy
+  data PolyTy : Type where
+    QVar : Int -> PolyTy
+    Ctor : TyF PolyTy -> PolyTy
 
 public export
-PImp : PTy -> PTy -> PTy
-PImp a b = Ctor (ImpF a b)
+PolyImp : PolyTy -> PolyTy -> PolyTy
+PolyImp a b = Ctor (ImpF a b)
 
 public export
-PBridge : PTy -> PTy -> PTy
-PBridge a b = Ctor (BridgeF a b)
+PolyBridge : PolyTy -> PolyTy -> PolyTy
+PolyBridge a b = Ctor (BridgeF a b)
 
 public export
-PTen : PTy -> PTy -> PTy
-PTen a b = Ctor (TenF a b)
+PolyTen : PolyTy -> PolyTy -> PolyTy
+PolyTen a b = Ctor (TenF a b)
 
 public export
-PSum : PTy -> PTy -> PTy
-PSum a b = Ctor (SumF a b)
+PolySum : PolyTy -> PolyTy -> PolyTy
+PolySum a b = Ctor (SumF a b)
 
 public export
-PWith : PTy -> PTy -> PTy
-PWith a b = Ctor (WithF a b)
+PolyWith : PolyTy -> PolyTy -> PolyTy
+PolyWith a b = Ctor (WithF a b)
 
 public export
-PPar : PTy -> PTy -> PTy
-PPar a b = Ctor (ParF a b)
-
---         .--- Ty
---         |     | tyToCTy
---         |     v
--- tyToPTy |    CTy
---         |     | Ctor
---         |     v
---         '--> PTy
+PolyPar : PolyTy -> PolyTy -> PolyTy
+PolyPar a b = Ctor (ParF a b)
 
 public export
-tyToPTy : Ty -> PTy
-tyToPTy (MkTy tyf)
-  = Ctor (map tyToPTy tyf)
+tyToPolyTy : Ty -> PolyTy
+tyToPolyTy (MkTy tyf)
+  = Ctor (map tyToPolyTy tyf)
 
 public export
-tyToCTy : Ty -> CTy
-tyToCTy (MkTy tyf)
-  = map tyToPTy tyf
-
-public export
-implementation Show PTy where
-  showPrec p (MetaVar node)
-    = "?" ++ show node
+implementation Show PolyTy where
+  showPrec p (QVar i)
+    = if i < 26
+      then String.singleton (chr (i + ord 'a'))
+      else String.singleton (chr ((i `mod` 26) + ord 'a'))
+        ++ show (i `div` 26)
   showPrec p (Ctor (ImpF a b))
     = showParens (p /= Open)
     $ "Imp " ++ showPrec App a ++ " " ++ showPrec App b
@@ -84,9 +70,9 @@ implementation Show PTy where
     $ "Par " ++ showPrec App a ++ " " ++ showPrec App b
 
 public export
-implementation Eq PTy where
-  MetaVar node1 == MetaVar node2
-    = node1 == node2
+implementation Eq PolyTy where
+  QVar i1 == QVar i2
+    = i1 == i2
   Ctor (ImpF a1 b1) == Ctor (ImpF a2 b2)
     = a1 == a2
    && b1 == b2
