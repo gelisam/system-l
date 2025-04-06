@@ -34,7 +34,7 @@ record S v where
 -- UnionFind state monad for easier manipulation.
 public export
 UnionFind : Type -> Type -> Type
-UnionFind v a = State (S v) a
+UnionFind v = State (S v)
 
 public export
 runUF : UnionFind v a -> a
