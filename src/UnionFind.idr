@@ -136,3 +136,44 @@ union node1 node2 maybeV = do
                        Nothing => delete bigRoot values'
 
       put $ MkS nextNode parents' values'' ranks'
+
+
+example1 : UnionFind String (List (Maybe String))
+example1 = do
+  nodeA <- newNode (Just "a")
+  nodeB <- newNode (Just "b")
+  nodeC <- newNode (Just "c")
+  nodeD <- newNode (Just "d")
+  nodeE <- newNode (Just "e")
+
+  -- Cheating to get a node which the system doesn't know about.
+  -- The fact that the user can technically do this is why the value must be a
+  -- Maybe. For unification, this works out because we do want to use Nothing to
+  -- represent the case in which we don't know anything about the type
+  -- represented by the unification variable.
+  let nodeF = nodeE + 1
+
+  union nodeA nodeB (Just "ab")
+  union nodeB nodeC (Just "abc")
+  setValue nodeC (Just "cba")
+  union nodeD nodeE (Just "de")
+
+  valueA <- getValue nodeA
+  valueB <- getValue nodeB
+  valueC <- getValue nodeC
+  valueD <- getValue nodeD
+  valueE <- getValue nodeE
+  valueF <- getValue nodeF
+  pure [valueA, valueB, valueC, valueD, valueE, valueF]
+
+public export
+test1 : IO ()
+test1 = printLn ( runUF example1
+               == [ Just "cba"
+                  , Just "cba"
+                  , Just "cba"
+                  , Just "de"
+                  , Just "de"
+                  , Nothing
+                  ]
+                )

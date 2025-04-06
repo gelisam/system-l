@@ -8,3 +8,9 @@ for FILE in src/*.idr; do
     --output-dir build \
     --check "$FILE"
 done
+
+idris2 \
+  --source-dir src \
+  --output-dir build \
+  -o runtests src/main.idr
+./build/runtests
