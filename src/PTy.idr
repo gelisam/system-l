@@ -59,3 +59,26 @@ public export
 tyToCTy : Ty -> CTy
 tyToCTy (MkTy tyf)
   = map tyToPTy tyf
+
+public export
+implementation Show PTy where
+  showPrec p (MetaVar node)
+    = "?" ++ show node
+  showPrec p (Ctor (ImpF a b))
+    = showParens (p /= Open)
+    $ "PImp " ++ showPrec App a ++ " " ++ showPrec App b
+  showPrec p (Ctor (BridgeF a b))
+    = showParens (p /= Open)
+    $ "PBridge " ++ showPrec App a ++ " " ++ showPrec App b
+  showPrec p (Ctor (TenF a b))
+    = showParens (p /= Open)
+    $ "PTen " ++ showPrec App a ++ " " ++ showPrec App b
+  showPrec p (Ctor (SumF a b))
+    = showParens (p /= Open)
+    $ "PSum " ++ showPrec App a ++ " " ++ showPrec App b
+  showPrec p (Ctor (WithF a b))
+    = showParens (p /= Open)
+    $ "PWith " ++ showPrec App a ++ " " ++ showPrec App b
+  showPrec p (Ctor (ParF a b))
+    = showParens (p /= Open)
+    $ "PPar " ++ showPrec App a ++ " " ++ showPrec App b
