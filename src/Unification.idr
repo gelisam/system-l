@@ -2,11 +2,12 @@ module Unification
 
 import Control.Monad.State
 import Data.Maybe
-import Data.SortedMap
+import Data.SortedMap as Map
 
 import ExceptT
-import Ty
+import PolyTy
 import PTy
+import Ty
 import UnionFind
 
 public export
@@ -130,6 +131,30 @@ public export
 unify : PTy -> PTy -> Unification ()
 unify = unifyPTys
 
+-- Replace _all_ the unification variables to quantified variables. Note that
+-- this is only reasonable for top-level types, this implementation would not
+-- work for let-generalization.
+public export
+generalize : PTy -> Unification PolyTy
+generalize pty = do
+  zonked <- zonk pty
+  evalStateT Map.empty (go zonked)
+  where
+    go : PTy -> StateT (SortedMap Node Nat) Unification PolyTy
+    go (MetaVar node) = do
+      nodeToQVar <- get
+      case lookup node nodeToQVar of
+        Nothing => do
+          let newQVar = length (Map.toList nodeToQVar)
+          let nodeToQVar' = insert node newQVar nodeToQVar
+          put nodeToQVar'
+          pure $ QVar newQVar
+        Just qvar => do
+          pure $ QVar qvar
+    go (Ctor cty) = do
+      cty' <- traverse go cty
+      pure $ Ctor cty'
+
 public export
 showUnificationError : UnificationError -> String
 showUnificationError (OccursCheckFailed node pty) = 
@@ -158,27 +183,23 @@ implementation Eq UnificationError where
     = False
 
 
-equivalent : PTy -> PTy -> Unification Bool
-equivalent pty1 pty2 = do
-  zonked1 <- zonk pty1
-  zonked2 <- zonk pty2
-  pure (zonked1 == zonked2)
-
-example1 : Unification Bool
+example1 : Unification PolyTy
 example1 = do
   meta1 <- newMetaVar
   meta2 <- newMetaVar
   meta3 <- newMetaVar
   meta4 <- newMetaVar
   unify (PImp meta1 meta2) (PImp meta2 meta3)
-  equivalent
-    (PImp meta1 $ PImp meta2 $ PImp meta3 meta4)
-    (PImp meta1 $ PImp meta1 $ PImp meta1 meta4)
+  generalize $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
 
 public export
 test1 : IO ()
 test1 = printLn ( runUnification example1
-               == Right True
+               == ( Right
+                  $ PolyImp (QVar 0)
+                  $ PolyImp (QVar 0)
+                  $ PolyImp (QVar 0) (QVar 1)
+                  )
                 )
 
 example2 : Unification ()

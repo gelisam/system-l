@@ -11,7 +11,7 @@ mutual
   -- Polymorphic Type, with quantified type variables
   public export
   data PolyTy : Type where
-    QVar : Int -> PolyTy
+    QVar : Nat -> PolyTy
     Ctor : TyF PolyTy -> PolyTy
 
 public export
@@ -47,9 +47,9 @@ public export
 implementation Show PolyTy where
   showPrec p (QVar i)
     = if i < 26
-      then String.singleton (chr (i + ord 'a'))
-      else String.singleton (chr ((i `mod` 26) + ord 'a'))
-        ++ show (i `div` 26)
+      then String.singleton (chr (cast i + ord 'a'))
+      else String.singleton (chr ((cast i `mod` 26) + ord 'a'))
+        ++ show (cast i `div` 26)
   showPrec p (Ctor (ImpF a b))
     = showParens (p /= Open)
     $ "Imp " ++ showPrec App a ++ " " ++ showPrec App b
