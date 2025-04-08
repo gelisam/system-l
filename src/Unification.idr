@@ -218,3 +218,19 @@ test2 = printLn ( runUnification example2
                       (ParF (MetaVar 1) (MetaVar 2))
                   )
                 )
+
+example3 : Unification ()
+example3 = do
+  meta1 <- newMetaVar
+  meta2 <- newMetaVar
+  unify meta1 (PImp meta1 meta2)
+
+public export
+test3 : IO ()
+test3 = printLn ( runUnification example3
+               == ( Left
+                  $ OccursCheckFailed
+                      0
+                      (ImpF (MetaVar 0) (MetaVar 1))
+                  )
+                )
