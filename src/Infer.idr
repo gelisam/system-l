@@ -4,8 +4,9 @@ import Control.Monad.State
 import Data.SortedMap as Map
 
 import ExceptT
-import Ty
+import PolyTy
 import PTy
+import Ty
 import Unification
 import UnionFind
 import UTerm
@@ -22,8 +23,15 @@ Infer : Type -> Type
 Infer = ExceptT InferError Unification
 
 public export
-PContext : Type
-PContext = SortedMap String PTy
+runInfer : Infer a -> Either InferError a
+runInfer body
+  = case runUnification (runExceptT body) of
+      Left e
+        => Left $ UnificationError e
+      Right (Left e)
+        => Left e
+      Right (Right a)
+        => Right a
 
 mergeDisjointContexts : PContext -> PContext -> Infer PContext
 mergeDisjointContexts ctx1 ctx2 = do
@@ -100,7 +108,6 @@ pullVarFromDelta
   = pullVariableFromContext VariableNotProduced
 
 mutual
-  public export
   inferCmd : UCmd -> Infer (PContext, PContext)
   inferCmd (UCut producerA consumerA) = do
     (g, a, d) <- inferProducer producerA
@@ -110,7 +117,6 @@ mutual
     dd' <- mergeDisjointContexts d d'
     pure (gg', dd')
 
-  public export
   inferProducer : UProducer -> Infer (PContext, PTy, PContext)
   inferProducer (UVar x) = do
     a <- lift $ newMetaVar
@@ -156,7 +162,6 @@ mutual
     (b, d) <- pullVarFromDelta y bd
     pure (g, PPar a b, d)
   
-  public export
   inferConsumer : UConsumer -> Infer (PContext, PTy, PContext)
   inferConsumer (UCoVar x) = do
     a <- lift $ newMetaVar
@@ -201,4 +206,55 @@ mutual
     gg' <- mergeDisjointContexts g g'
     dd' <- mergeDisjointContexts d d'
     pure (gg', PPar a b, dd')
-  
+
+public export
+typecheckCmd
+   : UCmd
+  -> Either InferError (PolyContext, PolyContext)
+typecheckCmd cmd = runInfer $ do
+  (g, d) <- inferCmd cmd
+  lift $ generalizePair g d
+
+public export
+typecheckProducer
+   : UProducer
+  -> Either InferError (PolyContext, PolyTy, PolyContext)
+typecheckProducer producer = runInfer $ do
+  (g, a, d) <- inferProducer producer
+  lift $ generalizeTriple g a d
+
+public export
+typecheckConsumer
+   : UConsumer
+  -> Either InferError (PolyContext, PolyTy, PolyContext)
+typecheckConsumer consumer = runInfer $ do
+  (g, a, d) <- inferConsumer consumer
+  lift $ generalizeTriple g a d
+
+
+public export
+implementation Show InferError where
+  showPrec p (VariableUsedTwice x)
+    = showParens (p /= Open)
+    $ "VariableUsedTwice " ++ showPrec App x
+  showPrec p (VariableNotConsumed x)
+    = showParens (p /= Open)
+    $ "VariableNotConsumed " ++ showPrec App x
+  showPrec p (VariableNotProduced x)
+    = showParens (p /= Open)
+    $ "VariableNotProduced " ++ showPrec App x
+  showPrec p (UnificationError e)
+    = showPrec p e
+
+public export
+implementation Eq InferError where
+  VariableUsedTwice x1 == VariableUsedTwice x2
+    = x1 == x2
+  VariableNotConsumed x1 == VariableNotConsumed x2
+    = x1 == x2
+  VariableNotProduced x1 == VariableNotProduced x2
+    = x1 == x2
+  UnificationError e1 == UnificationError e2
+    = e1 == e2
+  _ == _
+    = False

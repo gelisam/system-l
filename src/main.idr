@@ -1,5 +1,6 @@
 import UnionFind
 import Unification
+import Examples
 
 main : IO ()
 main = do
@@ -8,4 +9,5 @@ main = do
   Unification.test1
   Unification.test2
   Unification.test3
-  putStrLn "*** ALL TESTS PASSED ***"
+  Examples.test1
+  putStrLn "*** tests pass if no False is shown above ***"

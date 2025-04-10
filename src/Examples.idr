@@ -3,10 +3,16 @@
 -- a type which is equivalent to the intrinsic type, up to reordering.
 module Examples
 
-import Elem
+import Data.SortedMap as Map
+
 import Cover
+import Elem
+import Infer
 import ITerm
+import PolyTy
+import PTy
 import Ty
+import Unification
 import UTerm
 
 ----------------------------------------
@@ -136,6 +142,14 @@ uanihilate
   -> UCmd
 uanihilate x cox
   = UCut (UVar x) (UCoVar cox)
+
+public export
+test1 : IO ()
+test1 = printLn ( (typecheckCmd $ uanihilate "x" "anti-x")
+               == Right ( [("x", QVar 0)]
+                        , [("anti-x", QVar 0)]
+                        )
+                )
 
 ----------------------------------------
 

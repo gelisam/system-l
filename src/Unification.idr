@@ -11,6 +11,14 @@ import Ty
 import UnionFind
 
 public export
+PContext : Type
+PContext = SortedMap String PTy
+
+public export
+PolyContext : Type
+PolyContext = List (String, PolyTy)
+
+public export
 data UnificationError
   = OccursCheckFailed Root CTy
   | TypeMismatch CTy CTy
@@ -131,29 +139,63 @@ public export
 unify : PTy -> PTy -> Unification ()
 unify = unifyPTys
 
+generalizeZonked
+   : PTy
+  -> StateT (SortedMap Node Nat) Unification PolyTy
+generalizeZonked (MetaVar node) = do
+  nodeToQVar <- get
+  case lookup node nodeToQVar of
+    Nothing => do
+      let newQVar = length (Map.toList nodeToQVar)
+      let nodeToQVar' = insert node newQVar nodeToQVar
+      put nodeToQVar'
+      pure $ QVar newQVar
+    Just qvar => do
+      pure $ QVar qvar
+generalizeZonked (Ctor cty) = do
+  cty' <- traverse generalizeZonked cty
+  pure $ Ctor cty'
+
+generalizeContext
+   : PContext
+  -> StateT (SortedMap Node Nat) Unification PolyContext
+generalizeContext ctx = do
+  for (Map.toList ctx) $ \(x, pty) => do
+    zonked <- lift $ zonk pty
+    poly <- generalizeZonked zonked
+    pure (x, poly)
+
 -- Replace _all_ the unification variables to quantified variables. Note that
 -- this is only reasonable for top-level types, this implementation would not
 -- work for let-generalization.
 public export
 generalize : PTy -> Unification PolyTy
-generalize pty = do
-  zonked <- zonk pty
-  evalStateT Map.empty (go zonked)
-  where
-    go : PTy -> StateT (SortedMap Node Nat) Unification PolyTy
-    go (MetaVar node) = do
-      nodeToQVar <- get
-      case lookup node nodeToQVar of
-        Nothing => do
-          let newQVar = length (Map.toList nodeToQVar)
-          let nodeToQVar' = insert node newQVar nodeToQVar
-          put nodeToQVar'
-          pure $ QVar newQVar
-        Just qvar => do
-          pure $ QVar qvar
-    go (Ctor cty) = do
-      cty' <- traverse go cty
-      pure $ Ctor cty'
+generalize pty = evalStateT Map.empty $ do
+  zonked <- lift $ zonk pty
+  generalizeZonked zonked
+
+public export
+generalizePair
+   : PContext
+  -> PContext
+  -> Unification (PolyContext, PolyContext)
+generalizePair g d = evalStateT Map.empty $ do
+  g' <- generalizeContext g
+  d' <- generalizeContext d
+  pure (g', d')
+
+public export
+generalizeTriple
+   : PContext
+  -> PTy
+  -> PContext
+  -> Unification (PolyContext, PolyTy, PolyContext)
+generalizeTriple g pty d = evalStateT Map.empty $ do
+  g' <- generalizeContext g
+  zonked <- lift $ zonk pty
+  poly <- generalizeZonked zonked
+  d' <- generalizeContext d
+  pure (g', poly, d')
 
 public export
 showUnificationError : UnificationError -> String
