@@ -72,7 +72,7 @@ unifyIdenticalContexts variableNotPresent ctx1 ctx2 = do
   let pairs : List (String, Infer PTy)
       pairs = (\(x, (_, action)) => (x, action x))
           <$> Map.toList actions
-  
+
   -- pairs' : List (String, PTy)
   pairs' <- for pairs $ \(x, action) => do
     pty <- action
@@ -161,7 +161,7 @@ mutual
     (a, bd) <- pullVarFromDelta x abd
     (b, d) <- pullVarFromDelta y bd
     pure (g, PPar a b, d)
-  
+
   inferConsumer : UConsumer -> Infer (PContext, PTy, PContext)
   inferConsumer (UCoVar x) = do
     a <- lift $ newMetaVar
