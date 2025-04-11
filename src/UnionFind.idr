@@ -4,6 +4,9 @@ import Control.Monad.State
 import Data.Maybe
 import Data.SortedMap
 
+import ExceptT
+
+----------------------------------------
 
 -- A `Node` points to a value of type `Maybe v`. If it has been unioned with
 -- other Nodes, all the nodes in the set points to the same `Maybe v`.
@@ -33,8 +36,9 @@ record S v where
 
 -- Wrapped in a State monad for easier manipulation.
 public export
-UnionFindT : Type -> (m : Type -> Type) -> Type -> Type
-UnionFindT v m = StateT (S v) m
+record UnionFindT (v : Type) (m : Type -> Type) (a : Type) where
+  constructor MkUnionFindT
+  unUnionFindT : StateT (S v) m a
 
 public export
 UnionFind : Type -> Type -> Type
@@ -42,7 +46,7 @@ UnionFind v = UnionFindT v Identity
 
 public export
 runUnionFindT : Monad m => UnionFindT v m a -> m a
-runUnionFindT m = evalStateT (MkS 0 empty empty empty) m
+runUnionFindT (MkUnionFindT body) = evalStateT (MkS 0 empty empty empty) body
 
 public export
 runUnionFind : UnionFind v a -> a
@@ -50,7 +54,7 @@ runUnionFind = runIdentity . runUnionFindT
 
 public export
 newNode : Monad m => Maybe v -> UnionFindT v m Node
-newNode maybeV = do
+newNode maybeV = MkUnionFindT $ do
   MkS newNode parents values ranks <- get
   let values' = case maybeV of
                   Just v
@@ -60,42 +64,56 @@ newNode maybeV = do
   put $ MkS (newNode + 1) parents values' ranks
   pure newNode
 
-findParent : Monad m => Node -> UnionFindT v m (Maybe Node)
+findParent
+   : Monad m
+  => Node
+  -> StateT (S v) m (Maybe Node)
 findParent node = do
   MkS _ parents _ _ <- get
   pure $ lookup node parents
 
-setParent : Monad m => Node -> Root -> UnionFindT v m ()
+setParent
+   : Monad m
+  => Node
+  -> Root
+  -> StateT (S v) m ()
 setParent node parent = do
   MkS nextNode parents values ranks <- get
   let parents' = insert node parent parents
   put $ MkS nextNode parents' values ranks
 
-public export
-findRoot : Monad m => Node -> UnionFindT v m Node
-findRoot node = do
+findRootImpl
+   : Monad m
+  => Node
+  -> StateT (S v) m Node
+findRootImpl node = do
   findParent node >>= \case
     Nothing => do
       -- No parent, so it's a root.
       pure node
     Just parent => do
-      root <- findRoot parent
+      root <- findRootImpl parent
       -- Path compression: point directly to the root so the next 'findRoot' is
       -- O(1).
       setParent node root
       pure root
 
 public export
+findRoot : Monad m => Node -> UnionFindT v m Node
+findRoot node = MkUnionFindT $ do
+  findRootImpl node
+
+public export
 getValue : Monad m => Node -> UnionFindT v m (Maybe v)
-getValue node = do
-  root <- findRoot node
+getValue node = MkUnionFindT $ do
+  root <- findRootImpl node
   MkS _ _ values _ <- get
   pure $ lookup root values
 
 public export
 setValue : Monad m => Node -> Maybe v -> UnionFindT v m ()
-setValue node maybeV = do
-  root <- findRoot node
+setValue node maybeV = MkUnionFindT $ do
+  root <- findRootImpl node
   MkS nextNode parents values ranks <- get
   let values' = case maybeV of
                   Just v
@@ -111,9 +129,9 @@ setValue node maybeV = do
 -- using side-effects to calculate this function.
 public export
 union : Monad m => Node -> Node -> Maybe v -> UnionFindT v m ()
-union node1 node2 maybeV = do
-  root1 <- findRoot node1
-  root2 <- findRoot node2
+union node1 node2 maybeV = MkUnionFindT $ do
+  root1 <- findRootImpl node1
+  root2 <- findRootImpl node2
   
   if root1 == root2
     then do
@@ -145,6 +163,22 @@ union node1 node2 maybeV = do
 
       put $ MkS nextNode parents' values'' ranks'
 
+----------------------------------------
+
+public export
+implementation Monad m => Functor (UnionFindT v m) where
+  map f (MkUnionFindT m) = MkUnionFindT $ map f m
+
+public export
+implementation Monad m => Applicative (UnionFindT v m) where
+  pure x = MkUnionFindT $ pure x
+  (MkUnionFindT f) <*> (MkUnionFindT x) = MkUnionFindT $ f <*> x
+
+public export
+implementation Monad m => Monad (UnionFindT v m) where
+  MkUnionFindT ma >>= f = MkUnionFindT $ ma >>= \a => unUnionFindT (f a)
+
+----------------------------------------
 
 example1 : UnionFind String (List (Maybe String))
 example1 = do
@@ -185,3 +219,25 @@ test1 = printLn ( runUnionFind example1
                   , Nothing
                   ]
                 )
+
+----------------------------------------
+
+public export
+interface Monad m => MonadUnionFind v m where
+  liftUnionFind : UnionFind v a -> m a
+
+public export
+implementation Monad m => MonadUnionFind v (UnionFindT v m) where
+  liftUnionFind body = MkUnionFindT $ do
+    s <- get
+    let (s', a) = runState s $ unUnionFindT body
+    put s'
+    pure a
+
+public export
+implementation MonadUnionFind v m => MonadUnionFind v (StateT s m) where
+  liftUnionFind body = lift $ liftUnionFind body
+
+public export
+implementation MonadUnionFind v m => MonadUnionFind v (ExceptT e m) where
+  liftUnionFind body = lift $ liftUnionFind body
