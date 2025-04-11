@@ -30,7 +30,7 @@ Unification = ExceptT UnificationError (UnionFind CTy)
 public export
 runUnification : Unification a -> Either UnificationError a
 runUnification body = do
-  runUF (runExceptT body)
+  runUnionFind (runExceptT body)
 
 public export
 newMetaVar : Unification PTy

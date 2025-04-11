@@ -37,8 +37,8 @@ UnionFind : Type -> Type -> Type
 UnionFind v = State (S v)
 
 public export
-runUF : UnionFind v a -> a
-runUF = evalState (MkS 0 empty empty empty)
+runUnionFind : UnionFind v a -> a
+runUnionFind = evalState (MkS 0 empty empty empty)
 
 public export
 newNode : Maybe v -> UnionFind v Node
@@ -168,7 +168,7 @@ example1 = do
 
 public export
 test1 : IO ()
-test1 = printLn ( runUF example1
+test1 = printLn ( runUnionFind example1
                == [ Just "cba"
                   , Just "cba"
                   , Just "cba"
