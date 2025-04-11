@@ -1,4 +1,4 @@
-module Unification
+module UnifyTy
 
 import Control.Monad.State
 import Data.Maybe
@@ -19,27 +19,27 @@ PolyContext : Type
 PolyContext = List (String, PolyTy)
 
 public export
-data UnificationError
+data UnifyTyError
   = OccursCheckFailed Root CTy
   | TypeMismatch CTy CTy
 
 public export
-Unification : Type -> Type
-Unification = ExceptT UnificationError (UnionFind CTy)
+UnifyTy : Type -> Type
+UnifyTy = ExceptT UnifyTyError (UnionFind CTy)
 
 public export
-runUnification : Unification a -> Either UnificationError a
-runUnification body = do
+runUnifyTy : UnifyTy a -> Either UnifyTyError a
+runUnifyTy body = do
   runUnionFind (runExceptT body)
 
 public export
-newMetaVar : Unification PTy
+newMetaVar : UnifyTy PTy
 newMetaVar = do
   node <- lift $ newNode Nothing
   pure $ MetaVar node
 
 public export
-occursCheck : Node -> CTy -> Unification ()
+occursCheck : Node -> CTy -> UnifyTy ()
 occursCheck needleNode cty = do
   root <- lift $ findRoot needleNode
   bools <- traverse (rootOccursInPTy root) cty
@@ -47,9 +47,9 @@ occursCheck needleNode cty = do
     then throwE $ OccursCheckFailed root cty
     else pure ()
   where
-    rootOccursInPTy : Root -> PTy -> Unification Bool
+    rootOccursInPTy : Root -> PTy -> UnifyTy Bool
     rootOccursInPTy needleRoot pty = do
-      let go : PTy -> Unification Bool
+      let go : PTy -> UnifyTy Bool
           go (MetaVar node) = do
             root <- lift $ findRoot node
             pure (root == needleRoot)
@@ -59,7 +59,7 @@ occursCheck needleNode cty = do
       go pty
 
 public export
-zonk : PTy -> Unification PTy
+zonk : PTy -> UnifyTy PTy
 zonk (MetaVar node) = do
   root <- lift $ findRoot node
   (lift $ getValue root) >>= \case
@@ -73,7 +73,7 @@ zonk (Ctor cty) = do
   pure $ Ctor cty'
 
 mutual
-  unifyMetaVars : Node -> Node -> Unification ()
+  unifyMetaVars : Node -> Node -> UnifyTy ()
   unifyMetaVars node1 node2 = do
     root1 <- lift $ findRoot node1
     root2 <- lift $ findRoot node2
@@ -93,7 +93,7 @@ mutual
             unifyCTys cty1 cty2 
             lift $ union root1 root2 (Just cty1)
   
-  unifyMetaVarWithCty : Node -> CTy -> Unification ()
+  unifyMetaVarWithCty : Node -> CTy -> UnifyTy ()
   unifyMetaVarWithCty node1 cty2 = do
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
@@ -103,7 +103,7 @@ mutual
       Just cty1 => 
         unifyCTys cty1 cty2
   
-  unifyPTys : PTy -> PTy -> Unification ()
+  unifyPTys : PTy -> PTy -> UnifyTy ()
   unifyPTys (MetaVar node1) (MetaVar node2) = 
     unifyMetaVars node1 node2
   unifyPTys (MetaVar node) (Ctor cty) = 
@@ -113,7 +113,7 @@ mutual
   unifyPTys (Ctor cty1) (Ctor cty2) = 
     unifyCTys cty1 cty2
   
-  unifyCTys : CTy -> CTy -> Unification ()
+  unifyCTys : CTy -> CTy -> UnifyTy ()
   unifyCTys (ImpF a1 b1) (ImpF a2 b2) = do
     unifyPTys a1 a2
     unifyPTys b1 b2
@@ -136,12 +136,12 @@ mutual
     throwE (TypeMismatch cty1 cty2)
 
 public export
-unify : PTy -> PTy -> Unification ()
+unify : PTy -> PTy -> UnifyTy ()
 unify = unifyPTys
 
 generalizeZonked
    : PTy
-  -> StateT (SortedMap Node Nat) Unification PolyTy
+  -> StateT (SortedMap Node Nat) UnifyTy PolyTy
 generalizeZonked (MetaVar node) = do
   nodeToQVar <- get
   case lookup node nodeToQVar of
@@ -158,7 +158,7 @@ generalizeZonked (Ctor cty) = do
 
 generalizeContext
    : PContext
-  -> StateT (SortedMap Node Nat) Unification PolyContext
+  -> StateT (SortedMap Node Nat) UnifyTy PolyContext
 generalizeContext ctx = do
   for (Map.toList ctx) $ \(x, pty) => do
     zonked <- lift $ zonk pty
@@ -169,7 +169,7 @@ generalizeContext ctx = do
 -- this is only reasonable for top-level types, this implementation would not
 -- work for let-generalization.
 public export
-generalize : PTy -> Unification PolyTy
+generalize : PTy -> UnifyTy PolyTy
 generalize pty = evalStateT Map.empty $ do
   zonked <- lift $ zonk pty
   generalizeZonked zonked
@@ -178,7 +178,7 @@ public export
 generalizePair
    : PContext
   -> PContext
-  -> Unification (PolyContext, PolyContext)
+  -> UnifyTy (PolyContext, PolyContext)
 generalizePair g d = evalStateT Map.empty $ do
   g' <- generalizeContext g
   d' <- generalizeContext d
@@ -189,7 +189,7 @@ generalizeTriple
    : PContext
   -> PTy
   -> PContext
-  -> Unification (PolyContext, PolyTy, PolyContext)
+  -> UnifyTy (PolyContext, PolyTy, PolyContext)
 generalizeTriple g pty d = evalStateT Map.empty $ do
   g' <- generalizeContext g
   zonked <- lift $ zonk pty
@@ -198,14 +198,14 @@ generalizeTriple g pty d = evalStateT Map.empty $ do
   pure (g', poly, d')
 
 public export
-showUnificationError : UnificationError -> String
-showUnificationError (OccursCheckFailed node pty) = 
+showUnifyTyError : UnifyTyError -> String
+showUnifyTyError (OccursCheckFailed node pty) = 
   "Occurs check failed: Node " ++ showPrec App node ++ " occurs in " ++ showPrec App pty
-showUnificationError (TypeMismatch cty1 cty2) = 
+showUnifyTyError (TypeMismatch cty1 cty2) = 
   "Type mismatch: Cannot unify " ++ showPrec App cty1 ++ " with " ++ showPrec App cty2
 
 public export
-implementation Show UnificationError where
+implementation Show UnifyTyError where
   showPrec p (OccursCheckFailed node pty)
     = showParens (p /= Open)
     $ "OccursCheckFailed " ++ showPrec App node ++ " " ++ showPrec App pty
@@ -214,7 +214,7 @@ implementation Show UnificationError where
     $ "TypeMismatch " ++ showPrec App cty1 ++ " " ++ showPrec App cty2
 
 public export
-implementation Eq UnificationError where
+implementation Eq UnifyTyError where
   OccursCheckFailed node1 pty1 == OccursCheckFailed node2 pty2
     = node1 == node2
    && pty1 == pty2
@@ -225,7 +225,7 @@ implementation Eq UnificationError where
     = False
 
 
-example1 : Unification PolyTy
+example1 : UnifyTy PolyTy
 example1 = do
   meta1 <- newMetaVar
   meta2 <- newMetaVar
@@ -236,7 +236,7 @@ example1 = do
 
 public export
 test1 : IO ()
-test1 = printLn ( runUnification example1
+test1 = printLn ( runUnifyTy example1
                == ( Right
                   $ PolyImp (QVar 0)
                   $ PolyImp (QVar 0)
@@ -244,7 +244,7 @@ test1 = printLn ( runUnification example1
                   )
                 )
 
-example2 : Unification ()
+example2 : UnifyTy ()
 example2 = do
   meta1 <- newMetaVar
   meta2 <- newMetaVar
@@ -253,7 +253,7 @@ example2 = do
 
 public export
 test2 : IO ()
-test2 = printLn ( runUnification example2
+test2 = printLn ( runUnifyTy example2
                == ( Left
                   $ TypeMismatch
                       (ImpF (MetaVar 0) (MetaVar 1))
@@ -261,7 +261,7 @@ test2 = printLn ( runUnification example2
                   )
                 )
 
-example3 : Unification ()
+example3 : UnifyTy ()
 example3 = do
   meta1 <- newMetaVar
   meta2 <- newMetaVar
@@ -269,7 +269,7 @@ example3 = do
 
 public export
 test3 : IO ()
-test3 = printLn ( runUnification example3
+test3 = printLn ( runUnifyTy example3
                == ( Left
                   $ OccursCheckFailed
                       0

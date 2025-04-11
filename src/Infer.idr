@@ -7,7 +7,7 @@ import ExceptT
 import PolyTy
 import PTy
 import Ty
-import Unification
+import UnifyTy
 import UnionFind
 import UTerm
 
@@ -16,18 +16,18 @@ data InferError
   = VariableUsedTwice String
   | VariableNotConsumed String
   | VariableNotProduced String
-  | UnificationError UnificationError
+  | UnifyTyError UnifyTyError
 
 public export
 Infer : Type -> Type
-Infer = ExceptT InferError Unification
+Infer = ExceptT InferError UnifyTy
 
 public export
 runInfer : Infer a -> Either InferError a
 runInfer body
-  = case runUnification (runExceptT body) of
+  = case runUnifyTy (runExceptT body) of
       Left e
-        => Left $ UnificationError e
+        => Left $ UnifyTyError e
       Right (Left e)
         => Left e
       Right (Right a)
@@ -243,7 +243,7 @@ implementation Show InferError where
   showPrec p (VariableNotProduced x)
     = showParens (p /= Open)
     $ "VariableNotProduced " ++ showPrec App x
-  showPrec p (UnificationError e)
+  showPrec p (UnifyTyError e)
     = showPrec p e
 
 public export
@@ -254,7 +254,7 @@ implementation Eq InferError where
     = x1 == x2
   VariableNotProduced x1 == VariableNotProduced x2
     = x1 == x2
-  UnificationError e1 == UnificationError e2
+  UnifyTyError e1 == UnifyTyError e2
     = e1 == e2
   _ == _
     = False

@@ -12,7 +12,7 @@ import ITerm
 import PolyTy
 import PTy
 import Ty
-import Unification
+import UnifyTy
 import UTerm
 
 ----------------------------------------
