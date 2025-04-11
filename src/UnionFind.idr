@@ -31,17 +31,25 @@ record S v where
   -- Node to reach this Root. Missing keys map to 0.
   ranks : SortedMap Root Nat
 
--- UnionFind state monad for easier manipulation.
+-- Wrapped in a State monad for easier manipulation.
+public export
+UnionFindT : Type -> (m : Type -> Type) -> Type -> Type
+UnionFindT v m = StateT (S v) m
+
 public export
 UnionFind : Type -> Type -> Type
-UnionFind v = State (S v)
+UnionFind v = UnionFindT v Identity
+
+public export
+runUnionFindT : Monad m => UnionFindT v m a -> m a
+runUnionFindT m = evalStateT (MkS 0 empty empty empty) m
 
 public export
 runUnionFind : UnionFind v a -> a
-runUnionFind = evalState (MkS 0 empty empty empty)
+runUnionFind = runIdentity . runUnionFindT
 
 public export
-newNode : Maybe v -> UnionFind v Node
+newNode : Monad m => Maybe v -> UnionFindT v m Node
 newNode maybeV = do
   MkS newNode parents values ranks <- get
   let values' = case maybeV of
@@ -52,19 +60,19 @@ newNode maybeV = do
   put $ MkS (newNode + 1) parents values' ranks
   pure newNode
 
-findParent : Node -> UnionFind v (Maybe Node)
+findParent : Monad m => Node -> UnionFindT v m (Maybe Node)
 findParent node = do
   MkS _ parents _ _ <- get
   pure $ lookup node parents
 
-setParent : Node -> Root -> UnionFind v ()
+setParent : Monad m => Node -> Root -> UnionFindT v m ()
 setParent node parent = do
   MkS nextNode parents values ranks <- get
   let parents' = insert node parent parents
-  put $ MkS nextNode parents values ranks
+  put $ MkS nextNode parents' values ranks
 
 public export
-findRoot : Node -> UnionFind v Node
+findRoot : Monad m => Node -> UnionFindT v m Node
 findRoot node = do
   findParent node >>= \case
     Nothing => do
@@ -78,14 +86,14 @@ findRoot node = do
       pure root
 
 public export
-getValue : Node -> UnionFind v (Maybe v)
+getValue : Monad m => Node -> UnionFindT v m (Maybe v)
 getValue node = do
   root <- findRoot node
   MkS _ _ values _ <- get
   pure $ lookup root values
 
 public export
-setValue : Node -> Maybe v -> UnionFind v ()
+setValue : Monad m => Node -> Maybe v -> UnionFindT v m ()
 setValue node maybeV = do
   root <- findRoot node
   MkS nextNode parents values ranks <- get
@@ -102,7 +110,7 @@ setValue node maybeV = do
 -- `Maybe v -> Maybe v -> Maybe v`, because that would prevent the caller from
 -- using side-effects to calculate this function.
 public export
-union : Node -> Node -> Maybe v -> UnionFind v ()
+union : Monad m => Node -> Node -> Maybe v -> UnionFindT v m ()
 union node1 node2 maybeV = do
   root1 <- findRoot node1
   root2 <- findRoot node2
