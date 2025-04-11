@@ -10,6 +10,8 @@ import PTy
 import Ty
 import UnionFind
 
+----------------------------------------
+
 public export
 PContext : Type
 PContext = SortedMap String PTy
@@ -215,6 +217,7 @@ showUnifyTyError (OccursCheckFailed node pty) =
 showUnifyTyError (TypeMismatch cty1 cty2) = 
   "Type mismatch: Cannot unify " ++ showPrec App cty1 ++ " with " ++ showPrec App cty2
 
+----------------------------------------
 
 public export
 implementation Show UnifyTyError where
@@ -236,6 +239,7 @@ implementation Eq UnifyTyError where
   _ == _
     = False
 
+----------------------------------------
 
 example1 : UnifyTy PolyTy
 example1 = do

@@ -1,7 +1,6 @@
 -- untyped terms
 module UTerm
 
-
 mutual
   public export
   data UCmd : Type where
@@ -86,6 +85,7 @@ mutual
       -> UConsumer
       -> UConsumer
 
+----------------------------------------
 
 mutual
   showUCmd : Prec -> UCmd -> String

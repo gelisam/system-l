@@ -2,6 +2,7 @@ module Elem
 
 import Ty
 
+----------------------------------------
 
 public export
 data Elem : Ty -> List Ty -> Type where

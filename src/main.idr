@@ -2,6 +2,8 @@ import UnionFind
 import UnifyTy
 import Examples
 
+----------------------------------------
+
 main : IO ()
 main = do
   putStrLn "typechecks."

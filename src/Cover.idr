@@ -3,6 +3,7 @@ module Cover
 import Elem
 import Ty
 
+----------------------------------------
 
 -- `Cover g d gd` is a proof that `gd` can be partitioned into `g` and `d`. The
 -- order is preserved but isn't that important since in System L it is possible

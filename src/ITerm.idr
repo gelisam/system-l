@@ -5,6 +5,7 @@ import Cover
 import Elem
 import Ty
 
+----------------------------------------
 
 mutual
   -- `ICmd [a, b] [c, d]` is equivalent to `ICmd [] [Imp (Ten a b) (Par c d)]`.

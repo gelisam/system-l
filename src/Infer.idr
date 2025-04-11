@@ -11,6 +11,8 @@ import UnifyTy
 import UnionFind
 import UTerm
 
+----------------------------------------
+
 public export
 data InferError
   = VariableUsedTwice String
@@ -231,6 +233,7 @@ typecheckConsumer consumer = runInfer $ do
   (g, a, d) <- inferConsumer consumer
   lift $ generalizeTriple g a d
 
+----------------------------------------
 
 public export
 implementation Show InferError where

@@ -5,6 +5,7 @@ import Control.Monad.State
 import Ty
 import UnionFind
 
+----------------------------------------
 
 mutual
   -- Partial Type, meaning that part of the type can be a MetaVar
@@ -59,6 +60,8 @@ public export
 tyToCTy : Ty -> CTy
 tyToCTy (MkTy tyf)
   = map tyToPTy tyf
+
+----------------------------------------
 
 public export
 implementation Show PTy where

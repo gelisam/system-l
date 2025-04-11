@@ -6,6 +6,7 @@ import Data.String as String
 import Ty
 import UnionFind
 
+----------------------------------------
 
 mutual
   -- Polymorphic Type, with quantified type variables
@@ -42,6 +43,8 @@ public export
 tyToPolyTy : Ty -> PolyTy
 tyToPolyTy (MkTy tyf)
   = Ctor (map tyToPolyTy tyf)
+
+----------------------------------------
 
 public export
 implementation Show PolyTy where

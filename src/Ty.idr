@@ -1,7 +1,6 @@
 -- types (connectives)
 module Ty
 
-
 public export
 data TyF : Type -> Type where
   ImpF : r -> r -> TyF r
@@ -38,6 +37,8 @@ With a b = MkTy (WithF a b)
 public export
 Par : Ty -> Ty -> Ty
 Par a b = MkTy (ParF a b)
+
+----------------------------------------
 
 public export
 implementation Show r => Show (TyF r) where

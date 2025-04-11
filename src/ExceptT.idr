@@ -2,6 +2,7 @@ module ExceptT
 
 import Control.Monad.Trans
 
+----------------------------------------
 
 public export
 data ExceptT : (e : Type) -> (m : Type -> Type) -> (a : Type) -> Type where
@@ -15,6 +16,8 @@ public export
 throwE : Monad m => e -> ExceptT e m a
 throwE e = MkExceptT $ do
   pure $ Left e
+
+----------------------------------------
 
 public export
 implementation Functor m => Functor (ExceptT e m) where
