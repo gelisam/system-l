@@ -26,8 +26,9 @@ data UnifyTyError
   | TypeMismatch CTy CTy
 
 public export
-UnifyTyT : (m : Type -> Type) -> Type -> Type
-UnifyTyT m = ExceptT UnifyTyError (UnionFindT CTy m)
+record UnifyTyT (m : Type -> Type) (a : Type) where
+  constructor MkUnifyTyT
+  unUnifyTyT : ExceptT UnifyTyError (UnionFindT CTy m) a
 
 public export
 UnifyTy : Type -> Type
@@ -35,20 +36,41 @@ UnifyTy = UnifyTyT Identity
 
 public export
 runUnifyTyT : Monad m => UnifyTyT m a -> m (Either UnifyTyError a)
-runUnifyTyT body = runUnionFindT (runExceptT body)
+runUnifyTyT (MkUnifyTyT body) = runUnionFindT (runExceptT body)
 
 public export
 runUnifyTy : UnifyTy a -> Either UnifyTyError a
 runUnifyTy = runIdentity . runUnifyTyT
 
+-----------------------------------------
+
+public export
+implementation Monad m => Functor (UnifyTyT m) where
+  map f (MkUnifyTyT m) = MkUnifyTyT $ map f m
+
+public export
+implementation Monad m => Applicative (UnifyTyT m) where
+  pure x = MkUnifyTyT $ pure x
+  (MkUnifyTyT f) <*> (MkUnifyTyT x) = MkUnifyTyT $ f <*> x
+
+public export
+implementation Monad m => Monad (UnifyTyT m) where
+  (MkUnifyTyT ma) >>= f = MkUnifyTyT $ ma >>= \a => unUnifyTyT (f a)
+
+-----------------------------------------
+
 public export
 newMetaVar : Monad m => UnifyTyT m PTy
-newMetaVar = do
+newMetaVar = MkUnifyTyT $ do
   node <- lift $ newNode Nothing
   pure $ MetaVar node
 
 public export
-occursCheck : Monad m => Node -> CTy -> UnifyTyT m ()
+occursCheck
+   : Monad m
+  => Node
+  -> CTy
+  -> ExceptT UnifyTyError (UnionFindT CTy m) ()
 occursCheck needleNode cty = do
   root <- lift $ findRoot needleNode
   bools <- traverse (rootOccursInPTy root) cty
@@ -56,9 +78,12 @@ occursCheck needleNode cty = do
     then throwE $ OccursCheckFailed root cty
     else pure ()
   where
-    rootOccursInPTy : Root -> PTy -> UnifyTyT m Bool
+    rootOccursInPTy
+       : Root
+      -> PTy
+      -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
     rootOccursInPTy needleRoot pty = do
-      let go : PTy -> UnifyTyT m Bool
+      let go : PTy -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
           go (MetaVar node) = do
             root <- lift $ findRoot node
             pure (root == needleRoot)
@@ -68,21 +93,33 @@ occursCheck needleNode cty = do
       go pty
 
 public export
-zonk : Monad m => PTy -> UnifyTyT m PTy
-zonk (MetaVar node) = do
+zonkImpl
+   : Monad m
+  => PTy
+  -> ExceptT UnifyTyError (UnionFindT CTy m) PTy
+zonkImpl (MetaVar node) = do
   root <- lift $ findRoot node
   (lift $ getValue root) >>= \case
     Nothing => 
       pure $ MetaVar root
     Just cty => do
-      cty' <- traverse zonk cty
+      cty' <- traverse zonkImpl cty
       pure $ Ctor cty'
-zonk (Ctor cty) = do
-  cty' <- traverse zonk cty
+zonkImpl (Ctor cty) = do
+  cty' <- traverse zonkImpl cty
   pure $ Ctor cty'
 
+public export
+zonk : Monad m => PTy -> UnifyTyT m PTy
+zonk pty = MkUnifyTyT $ do
+  zonkImpl pty
+
 mutual
-  unifyMetaVars : Monad m => Node -> Node -> UnifyTyT m ()
+  unifyMetaVars
+     : Monad m
+    => Node
+    -> Node
+    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
   unifyMetaVars node1 node2 = do
     root1 <- lift $ findRoot node1
     root2 <- lift $ findRoot node2
@@ -102,7 +139,11 @@ mutual
             unifyCTys cty1 cty2 
             lift $ union root1 root2 (Just cty1)
   
-  unifyMetaVarWithCty : Monad m => Node -> CTy -> UnifyTyT m ()
+  unifyMetaVarWithCty
+     : Monad m
+    => Node
+    -> CTy
+    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
   unifyMetaVarWithCty node1 cty2 = do
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
@@ -112,7 +153,11 @@ mutual
       Just cty1 => 
         unifyCTys cty1 cty2
   
-  unifyPTys : Monad m => PTy -> PTy -> UnifyTyT m ()
+  unifyPTys
+     : Monad m
+    => PTy
+    -> PTy
+    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
   unifyPTys (MetaVar node1) (MetaVar node2) = 
     unifyMetaVars node1 node2
   unifyPTys (MetaVar node) (Ctor cty) = 
@@ -122,7 +167,11 @@ mutual
   unifyPTys (Ctor cty1) (Ctor cty2) = 
     unifyCTys cty1 cty2
   
-  unifyCTys : Monad m => CTy -> CTy -> UnifyTyT m ()
+  unifyCTys
+     : Monad m
+    => CTy
+    -> CTy
+    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
   unifyCTys (ImpF a1 b1) (ImpF a2 b2) = do
     unifyPTys a1 a2
     unifyPTys b1 b2
@@ -141,12 +190,13 @@ mutual
   unifyCTys (ParF a1 b1) (ParF a2 b2) = do
     unifyPTys a1 a2
     unifyPTys b1 b2
-  unifyCTys cty1 cty2 = 
+  unifyCTys cty1 cty2 = do
     throwE (TypeMismatch cty1 cty2)
 
 public export
 unify : Monad m => PTy -> PTy -> UnifyTyT m ()
-unify = unifyPTys
+unify pty1 pty2 = MkUnifyTyT $ do
+  unifyPTys pty1 pty2
 
 generalizeZonked
    : Monad m
@@ -292,3 +342,24 @@ test3 = printLn ( runUnifyTy example3
                       (ImpF (MetaVar 0) (MetaVar 1))
                   )
                 )
+
+----------------------------------------
+
+public export
+interface Monad m => MonadUnifyTy m where
+  liftUnifyTy : UnifyTy a -> m a
+
+public export
+implementation Monad m => MonadUnifyTy (UnifyTyT m) where
+  liftUnifyTy body = MkUnifyTyT $ do
+    case runUnifyTy body of
+      Left e => throwE e
+      Right a => pure a
+
+public export
+implementation MonadUnifyTy m => MonadUnifyTy (StateT s m) where
+  liftUnifyTy body = lift $ liftUnifyTy body
+
+public export
+implementation MonadUnifyTy m => MonadUnifyTy (ExceptT e m) where
+  liftUnifyTy body = lift $ liftUnifyTy body
