@@ -21,22 +21,63 @@ data InferError
   | UnifyTyError UnifyTyError
 
 public export
+record InferT (m : Type -> Type) (a : Type) where
+  constructor MkInferT
+  unInferT : ExceptT InferError (UnifyTyT m) a
+
+public export
 Infer : Type -> Type
-Infer = ExceptT InferError UnifyTy
+Infer = InferT Identity
+
+public export
+runInferT : Monad m => InferT m a -> m (Either InferError a)
+runInferT (MkInferT body) = do
+  result <- runUnifyTyT $ runExceptT body
+  pure $ case result of
+    Left e => Left $ UnifyTyError e
+    Right (Left e) => Left e
+    Right (Right a) => Right a
 
 public export
 runInfer : Infer a -> Either InferError a
-runInfer body
-  = case runUnifyTy (runExceptT body) of
-      Left e
-        => Left $ UnifyTyError e
-      Right (Left e)
-        => Left e
-      Right (Right a)
-        => Right a
+runInfer = runIdentity . runInferT
 
-mergeDisjointContexts : PContext -> PContext -> Infer PContext
-mergeDisjointContexts ctx1 ctx2 = do
+-----------------------------------------
+
+public export
+implementation Monad m => Functor (InferT m) where
+  map f (MkInferT m) = MkInferT $ map f m
+
+public export
+implementation Monad m => Applicative (InferT m) where
+  pure x = MkInferT $ pure x
+  (MkInferT f) <*> (MkInferT x) = MkInferT $ f <*> x
+
+public export
+implementation Monad m => Monad (InferT m) where
+  (MkInferT ma) >>= f = MkInferT $ ma >>= \a => unInferT (f a)
+
+-- Note that InferT discharges the MonadUnifyTy constraint, it does _not_
+-- delegate to the m. Being able to unify type variables in an important part of
+-- InferT's API.
+public export
+implementation Monad m => MonadUnifyTy (InferT m) where
+  liftUnifyTy body = MkInferT (go body)
+    where
+      go : UnifyTy a -> ExceptT InferError (UnifyTyT m) a
+      go body = do
+        let body' : UnifyTyT m a
+            body' = liftUnifyTy body
+        lift body'
+
+-----------------------------------------
+
+mergeDisjointContexts
+   : Monad m
+  => PContext
+  -> PContext
+  -> InferT m PContext
+mergeDisjointContexts ctx1 ctx2 = MkInferT $ do
   let falses1, falses2, bools : SortedMap String Bool
       falses1 = map (const False) ctx1
       falses2 = map (const False) ctx2
@@ -53,12 +94,13 @@ mergeDisjointContexts ctx1 ctx2 = do
       throwE $ VariableUsedTwice x
 
 unifyIdenticalContexts
-   : (String -> InferError)
+   : Monad m
+  => (String -> InferError)
   -> PContext
   -> PContext
-  -> Infer PContext
-unifyIdenticalContexts variableNotPresent ctx1 ctx2 = do
-  let throws1, throws2, actions : SortedMap String (PTy, String -> Infer PTy)
+  -> InferT m PContext
+unifyIdenticalContexts variableNotPresent ctx1 ctx2 = MkInferT $ do
+  let throws1, throws2, actions : SortedMap String (PTy, String -> ExceptT InferError (UnifyTyT m) PTy)
       throws1 = map (\pty => (pty, throwE . variableNotPresent)) ctx1
       throws2 = map (\pty => (pty, throwE . variableNotPresent)) ctx2
       actions = Map.mergeWith
@@ -71,7 +113,7 @@ unifyIdenticalContexts variableNotPresent ctx1 ctx2 = do
         )
         throws1
         throws2
-  let pairs : List (String, Infer PTy)
+  let pairs : List (String, ExceptT InferError (UnifyTyT m) PTy)
       pairs = (\(x, (_, action)) => (x, action x))
           <$> Map.toList actions
 
@@ -81,47 +123,70 @@ unifyIdenticalContexts variableNotPresent ctx1 ctx2 = do
     pure (x, pty)
   pure $ Map.fromList pairs'
 
-unifyIdenticalGammas : PContext -> PContext -> Infer PContext
+unifyIdenticalGammas
+   : Monad m
+  => PContext
+  -> PContext
+  -> InferT m PContext
 unifyIdenticalGammas
   = unifyIdenticalContexts VariableNotConsumed
 
-unifyIdenticalDeltas : PContext -> PContext -> Infer PContext
+unifyIdenticalDeltas
+   : Monad m
+  => PContext
+  -> PContext
+  -> InferT m PContext
 unifyIdenticalDeltas
   = unifyIdenticalContexts VariableNotProduced
 
 pullVariableFromContext
-   : (String -> InferError)
+   : Monad m
+  => (String -> InferError)
   -> String
   -> PContext
-  -> Infer (PTy, PContext)
-pullVariableFromContext variableNotPresent x ctx = do
+  -> InferT m (PTy, PContext)
+pullVariableFromContext variableNotPresent x ctx = MkInferT $ do
   case Map.lookup x ctx of
     Nothing => do
       throwE $ variableNotPresent x
     Just a => do
       pure (a, Map.delete x ctx)
 
-pullVarFromGamma : String -> PContext -> Infer (PTy, PContext)
+pullVarFromGamma
+   : Monad m
+  => String
+  -> PContext
+  -> InferT m (PTy, PContext)
 pullVarFromGamma
   = pullVariableFromContext VariableNotConsumed
 
-pullVarFromDelta : String -> PContext -> Infer (PTy, PContext)
+pullVarFromDelta
+   : Monad m
+  => String
+  -> PContext
+  -> InferT m (PTy, PContext)
 pullVarFromDelta
   = pullVariableFromContext VariableNotProduced
 
 mutual
-  inferCmd : UCmd -> Infer (PContext, PContext)
+  inferCmd
+     : Monad m
+    => UCmd
+    -> InferT m (PContext, PContext)
   inferCmd (UCut producerA consumerA) = do
     (g, a, d) <- inferProducer producerA
     (g', a', d') <- inferConsumer consumerA
-    lift $ unify a a'
+    liftUnifyTy $ unify a a'
     gg' <- mergeDisjointContexts g g'
     dd' <- mergeDisjointContexts d d'
     pure (gg', dd')
 
-  inferProducer : UProducer -> Infer (PContext, PTy, PContext)
+  inferProducer
+     : Monad m
+    => UProducer
+    -> InferT m (PContext, PTy, PContext)
   inferProducer (UVar x) = do
-    a <- lift $ newMetaVar
+    a <- liftUnifyTy $ newMetaVar
     pure (Map.singleton x a, a, Map.empty)
   inferProducer (UMu x g_to_ad) = do
     (g, ad) <- inferCmd g_to_ad
@@ -146,10 +211,10 @@ mutual
     pure (gg', PTen a b, dd')
   inferProducer (ULeft producerA) = do
     (g, a, d) <- inferProducer producerA
-    b <- lift $ newMetaVar
+    b <- liftUnifyTy $ newMetaVar
     pure (g, PSum a b, d)
   inferProducer (URight producerB) = do
-    a <- lift $ newMetaVar
+    a <- liftUnifyTy $ newMetaVar
     (g, b, d) <- inferProducer producerB
     pure (g, PSum a b, d)
   inferProducer (UCoMatchWith producerA producerB) = do
@@ -164,9 +229,12 @@ mutual
     (b, d) <- pullVarFromDelta y bd
     pure (g, PPar a b, d)
 
-  inferConsumer : UConsumer -> Infer (PContext, PTy, PContext)
+  inferConsumer
+     : Monad m
+    => UConsumer
+    -> InferT m (PContext, PTy, PContext)
   inferConsumer (UCoVar x) = do
-    a <- lift $ newMetaVar
+    a <- liftUnifyTy $ newMetaVar
     pure (Map.empty, a, Map.singleton x a)
   inferConsumer (UCoMu x cmd) = do
     (g, d) <- inferCmd cmd
@@ -196,10 +264,10 @@ mutual
     pure (gg', PSum a b, dd')
   inferConsumer (UFst consumerA) = do
     (g, a, d) <- inferConsumer consumerA
-    b <- lift $ newMetaVar
+    b <- liftUnifyTy $ newMetaVar
     pure (g, PWith a b, d)
   inferConsumer (USnd consumerB) = do
-    a <- lift $ newMetaVar
+    a <- liftUnifyTy $ newMetaVar
     (g, b, d) <- inferConsumer consumerB
     pure (g, PWith a b, d)
   inferConsumer (UHandlePar consumerA consumerB) = do
@@ -215,7 +283,7 @@ typecheckCmd
   -> Either InferError (PolyContext, PolyContext)
 typecheckCmd cmd = runInfer $ do
   (g, d) <- inferCmd cmd
-  lift $ generalizePair g d
+  liftUnifyTy $ generalizePair g d
 
 public export
 typecheckProducer
@@ -223,7 +291,7 @@ typecheckProducer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
 typecheckProducer producer = runInfer $ do
   (g, a, d) <- inferProducer producer
-  lift $ generalizeTriple g a d
+  liftUnifyTy $ generalizeTriple g a d
 
 public export
 typecheckConsumer
@@ -231,7 +299,7 @@ typecheckConsumer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
 typecheckConsumer consumer = runInfer $ do
   (g, a, d) <- inferConsumer consumer
-  lift $ generalizeTriple g a d
+  liftUnifyTy $ generalizeTriple g a d
 
 ----------------------------------------
 
@@ -261,3 +329,31 @@ implementation Eq InferError where
     = e1 == e2
   _ == _
     = False
+
+-----------------------------------------
+
+public export
+interface Monad m => MonadInfer m where
+  liftInfer : Infer a -> m a
+
+public export
+implementation Monad m => MonadInfer (InferT m) where
+  liftInfer body = MkInferT $ go body
+    where
+      go : Infer a -> ExceptT InferError (UnifyTyT m) a
+      go body = do
+        let body' : UnifyTyT m (Either InferError a)
+            body' = liftUnifyTy $ runExceptT $ unInferT body
+        lift body' >>= \case
+          Left e => do
+            throwE e
+          Right a => do
+            pure a
+
+public export
+implementation MonadInfer m => MonadInfer (StateT s m) where
+  liftInfer body = lift $ liftInfer body
+
+public export
+implementation MonadInfer m => MonadInfer (ExceptT e m) where
+  liftInfer body = lift $ liftInfer body
