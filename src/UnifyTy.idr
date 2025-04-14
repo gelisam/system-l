@@ -351,10 +351,17 @@ interface Monad m => MonadUnifyTy m where
 
 public export
 implementation Monad m => MonadUnifyTy (UnifyTyT m) where
-  liftUnifyTy body = MkUnifyTyT $ do
-    case runUnifyTy body of
-      Left e => throwE e
-      Right a => pure a
+  liftUnifyTy body = MkUnifyTyT $ go body
+    where
+      go : UnifyTy a -> ExceptT UnifyTyError (UnionFindT CTy m) a
+      go body = do
+        let body' : UnionFindT CTy m (Either UnifyTyError a)
+            body' = liftUnionFind $ runExceptT $ unUnifyTyT body
+        lift body' >>= \case
+          Left e => do
+            throwE e
+          Right a => do
+            pure a
 
 public export
 implementation MonadUnifyTy m => MonadUnifyTy (StateT s m) where
