@@ -4,6 +4,7 @@ import Control.Monad.State
 import Data.SortedMap as Map
 
 import ExceptT
+import Generalize
 import PolyTy
 import PTy
 import Ty
@@ -30,17 +31,27 @@ Infer : Type -> Type
 Infer = InferT Identity
 
 public export
-runInferT : Monad m => InferT m a -> m (Either InferError a)
-runInferT (MkInferT body) = do
-  result <- runUnifyTyT $ runExceptT body
+runInferTAndGeneralize
+   : Monad m
+  => InferT m a
+  -> (a -> Generalize b)
+  -> m (Either InferError b)
+runInferTAndGeneralize (MkInferT body) generalizeA = do
+  result <- runUnifyTyTAndGeneralize
+              (runExceptT body)
+              (traverse generalizeA)
   pure $ case result of
     Left e => Left $ UnifyTyError e
     Right (Left e) => Left e
     Right (Right a) => Right a
 
 public export
-runInfer : Infer a -> Either InferError a
-runInfer = runIdentity . runInferT
+runInferAndGeneralize
+   : Infer a
+  -> (a -> Generalize b)
+  -> Either InferError b
+runInferAndGeneralize body generalizeA
+  = runIdentity $ runInferTAndGeneralize body generalizeA
 
 -----------------------------------------
 
@@ -281,25 +292,31 @@ public export
 typecheckCmd
    : UCmd
   -> Either InferError (PolyContext, PolyContext)
-typecheckCmd cmd = runInfer $ do
-  (g, d) <- inferCmd cmd
-  liftUnifyTy $ generalizePair g d
+typecheckCmd cmd
+  = runInferAndGeneralize
+      (inferCmd cmd)
+      (\(g, d) => do
+        generalizePair g d)
 
 public export
 typecheckProducer
    : UProducer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
-typecheckProducer producer = runInfer $ do
-  (g, a, d) <- inferProducer producer
-  liftUnifyTy $ generalizeTriple g a d
+typecheckProducer producer
+  = runInferAndGeneralize
+      (inferProducer producer)
+      (\(g, a, d) => do
+        generalizeTriple g a d)
 
 public export
 typecheckConsumer
    : UConsumer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
-typecheckConsumer consumer = runInfer $ do
-  (g, a, d) <- inferConsumer consumer
-  liftUnifyTy $ generalizeTriple g a d
+typecheckConsumer consumer
+  = runInferAndGeneralize
+      (inferConsumer consumer)
+      (\(g, a, d) => do
+        generalizeTriple g a d)
 
 ----------------------------------------
 

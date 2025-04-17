@@ -7,6 +7,7 @@ import Data.SortedMap as Map
 
 import Cover
 import Elem
+import Generalize
 import Infer
 import ITerm
 import PolyTy

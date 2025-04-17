@@ -1,24 +1,13 @@
 module UnifyTy
 
 import Control.Monad.State
-import Data.Maybe
-import Data.SortedMap as Map
 
 import ExceptT
-import PolyTy
 import PTy
 import Ty
 import UnionFind
 
 ----------------------------------------
-
-public export
-PContext : Type
-PContext = SortedMap String PTy
-
-public export
-PolyContext : Type
-PolyContext = List (String, PolyTy)
 
 public export
 data UnifyTyError
@@ -198,68 +187,6 @@ unify : Monad m => PTy -> PTy -> UnifyTyT m ()
 unify pty1 pty2 = MkUnifyTyT $ do
   unifyPTys pty1 pty2
 
-generalizeZonked
-   : Monad m
-  => PTy
-  -> StateT (SortedMap Node Nat) (UnifyTyT m) PolyTy
-generalizeZonked (MetaVar node) = do
-  nodeToQVar <- get
-  case lookup node nodeToQVar of
-    Nothing => do
-      let newQVar = length (Map.toList nodeToQVar)
-      let nodeToQVar' = insert node newQVar nodeToQVar
-      put nodeToQVar'
-      pure $ QVar newQVar
-    Just qvar => do
-      pure $ QVar qvar
-generalizeZonked (Ctor cty) = do
-  cty' <- traverse generalizeZonked cty
-  pure $ Ctor cty'
-
-generalizeContext
-   : Monad m
-  => PContext
-  -> StateT (SortedMap Node Nat) (UnifyTyT m) PolyContext
-generalizeContext ctx = do
-  for (Map.toList ctx) $ \(x, pty) => do
-    zonked <- lift $ zonk pty
-    poly <- generalizeZonked zonked
-    pure (x, poly)
-
--- Replace _all_ the unification variables to quantified variables. Note that
--- this is only reasonable for top-level types, this implementation would not
--- work for let-generalization.
-public export
-generalize : Monad m => PTy -> UnifyTyT m PolyTy
-generalize pty = evalStateT Map.empty $ do
-  zonked <- lift $ zonk pty
-  generalizeZonked zonked
-
-public export
-generalizePair
-   : Monad m
-  => PContext
-  -> PContext
-  -> UnifyTyT m (PolyContext, PolyContext)
-generalizePair g d = evalStateT Map.empty $ do
-  g' <- generalizeContext g
-  d' <- generalizeContext d
-  pure (g', d')
-
-public export
-generalizeTriple
-   : Monad m
-  => PContext
-  -> PTy
-  -> PContext
-  -> UnifyTyT m (PolyContext, PolyTy, PolyContext)
-generalizeTriple g pty d = evalStateT Map.empty $ do
-  g' <- generalizeContext g
-  zonked <- lift $ zonk pty
-  poly <- generalizeZonked zonked
-  d' <- generalizeContext d
-  pure (g', poly, d')
-
 public export
 showUnifyTyError : UnifyTyError -> String
 showUnifyTyError (OccursCheckFailed node pty) = 
@@ -291,22 +218,22 @@ implementation Eq UnifyTyError where
 
 ----------------------------------------
 
-example1 : UnifyTy PolyTy
+example1 : UnifyTy PTy
 example1 = do
   meta1 <- newMetaVar
   meta2 <- newMetaVar
   meta3 <- newMetaVar
   meta4 <- newMetaVar
   unify (PImp meta1 meta2) (PImp meta2 meta3)
-  generalize $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
+  zonk $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
 
 public export
 test1 : IO ()
 test1 = printLn ( runUnifyTy example1
                == ( Right
-                  $ PolyImp (QVar 0)
-                  $ PolyImp (QVar 0)
-                  $ PolyImp (QVar 0) (QVar 1)
+                  $ PImp (MetaVar 0)
+                  $ PImp (MetaVar 0)
+                  $ PImp (MetaVar 0) (MetaVar 3)
                   )
                 )
 
