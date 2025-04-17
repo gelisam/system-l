@@ -3,7 +3,7 @@
 -- This is my first Idris project and I don't know why StateT is built-in but
 -- ExceptT is not. I couldn't figure out how to obtain ExceptT from Idris's
 -- equivalent of hackage, so I wrote my own.
-module ExceptT
+module UTerm.ExceptT
 
 import Control.Monad.Trans
 

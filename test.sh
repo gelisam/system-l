@@ -2,7 +2,7 @@
 set -e
 
 clear
-for FILE in src/*.idr; do
+for FILE in $(find src -name '*.idr'); do
   idris2 \
     --source-dir src \
     --output-dir build \

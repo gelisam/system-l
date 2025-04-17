@@ -1,9 +1,9 @@
 -- `Cover g d gd` is a proof that `gd` can be partitioned into `g` and `d`. The
 -- order is preserved but isn't that important since in System L it is possible
 -- to construct a term which swaps variables.
-module Cover
+module ITerm.Cover
 
-import Elem
+import ITerm.Elem
 import Ty
 
 ----------------------------------------

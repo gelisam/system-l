@@ -1,10 +1,10 @@
-module UnionFind
+module UTerm.UnionFind
 
 import Control.Monad.State
 import Data.Maybe
 import Data.SortedMap
 
-import ExceptT
+import UTerm.ExceptT
 
 ----------------------------------------
 

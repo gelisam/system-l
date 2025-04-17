@@ -3,16 +3,16 @@
 -- there are portions in a PTy for which we still haven't pinned down which type
 -- they should be, that means that any type would have worked. In that case, we
 -- "generalize" the PTy into a PolyTy, to indicate which parts can be any type.
-module Generalize
+module UTerm.Generalize
 
 import Control.Monad.State
 import Data.SortedMap as Map
 
-import PolyTy
-import PTy
 import Ty
-import UnifyTy
-import UnionFind
+import UTerm.PolyTy
+import UTerm.PTy
+import UTerm.UnifyTy
+import UTerm.UnionFind
 
 ----------------------------------------
 

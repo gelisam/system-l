@@ -3,14 +3,14 @@
 -- must refer to and detecting contradictions. The module "Infer.idr" uses this
 -- when traversing a UTerm to make sure that two types which are supposed to be
 -- equal according to the typing rules really are equal.
-module UnifyTy
+module UTerm.UnifyTy
 
 import Control.Monad.State
 
-import ExceptT
-import PTy
 import Ty
-import UnionFind
+import UTerm.ExceptT
+import UTerm.PTy
+import UTerm.UnionFind
 
 ----------------------------------------
 

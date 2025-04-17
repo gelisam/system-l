@@ -4,8 +4,8 @@
 -- corresponding ITerms.
 module ITerm
 
-import Cover
-import Elem
+import ITerm.Cover
+import ITerm.Elem
 import Ty
 
 ----------------------------------------

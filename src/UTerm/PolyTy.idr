@@ -9,13 +9,13 @@
 -- allow the top-level definitions in "Example.idr" to have a polymorphic type.
 -- This approach also makes it possible to accept UTerms whose type would
 -- otherwise be ambiguous.
-module PolyTy
+module UTerm.PolyTy
 
 import Control.Monad.State
 import Data.String as String
 
 import Ty
-import UnionFind
+import UTerm.UnionFind
 
 ----------------------------------------
 

@@ -5,16 +5,16 @@ module Examples
 
 import Data.SortedMap as Map
 
-import Cover
-import Elem
-import Generalize
 import Infer
 import ITerm
-import PolyTy
-import PTy
+import ITerm.Cover
+import ITerm.Elem
 import Ty
-import UnifyTy
 import UTerm
+import UTerm.Generalize
+import UTerm.PolyTy
+import UTerm.PTy
+import UTerm.UnifyTy
 
 ----------------------------------------
 

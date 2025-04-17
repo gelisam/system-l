@@ -1,6 +1,6 @@
-import UnionFind
-import UnifyTy
-import Generalize
+import UTerm.Generalize
+import UTerm.UnifyTy
+import UTerm.UnionFind
 import Examples
 
 ----------------------------------------

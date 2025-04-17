@@ -17,12 +17,12 @@
 --   PImp String Nat == PImp Char Nat
 --
 -- would be an invalid solution.
-module PTy
+module UTerm.PTy
 
 import Control.Monad.State
 
 import Ty
-import UnionFind
+import UTerm.UnionFind
 
 ----------------------------------------
 

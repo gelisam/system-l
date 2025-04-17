@@ -5,14 +5,14 @@ module Infer
 import Control.Monad.State
 import Data.SortedMap as Map
 
-import ExceptT
-import Generalize
-import PolyTy
-import PTy
 import Ty
-import UnifyTy
-import UnionFind
 import UTerm
+import UTerm.ExceptT
+import UTerm.Generalize
+import UTerm.PolyTy
+import UTerm.PTy
+import UTerm.UnifyTy
+import UTerm.UnionFind
 
 ----------------------------------------
 
