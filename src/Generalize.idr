@@ -29,13 +29,13 @@ record Generalize a where
 -- correct usage, namely generalizing everything at the very end of a UnifyTy
 -- computation so that the unification variables cannot be used again.
 public export
-runUnifyTyTAndGeneralize
+runUnifyTyT
    : Monad m
   => UnifyTyT m a
   -> (a -> Generalize b)
   -> m (Either UnifyTyError b)
-runUnifyTyTAndGeneralize body1 generalizeA = do
-  runUnifyTyT $ do
+runUnifyTyT body1 generalizeA = do
+  runUnifyTyTWithoutGeneralizing $ do
     x <- body1
     let body2' : Generalize b
         body2' = generalizeA x
@@ -44,12 +44,12 @@ runUnifyTyTAndGeneralize body1 generalizeA = do
     liftUnifyTy body2''
 
 public export
-runUnifyTyAndGeneralize
+runUnifyTy
    : UnifyTy a
   -> (a -> Generalize b)
   -> Either UnifyTyError b
-runUnifyTyAndGeneralize body1 generalizeA
-  = runIdentity $ runUnifyTyTAndGeneralize body1 generalizeA
+runUnifyTy body1 generalizeA
+  = runIdentity $ runUnifyTyT body1 generalizeA
 
 ----------------------------------------
 
@@ -130,7 +130,7 @@ example1 = do
 
 public export
 test1 : IO ()
-test1 = printLn ( runUnifyTyAndGeneralize example1 generalizeType
+test1 = printLn ( runUnifyTy example1 generalizeType
                == ( Right
                   $ PolyImp (QVar 0)
                   $ PolyImp (QVar 0)

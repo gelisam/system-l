@@ -146,7 +146,7 @@ uanihilate x cox
 
 public export
 test1 : IO ()
-test1 = printLn ( (typecheckCmd $ uanihilate "x" "anti-x")
+test1 = printLn ( (runInferCmd $ uanihilate "x" "anti-x")
                == Right ( [("x", QVar 0)]
                         , [("anti-x", QVar 0)]
                         )

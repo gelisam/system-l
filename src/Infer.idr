@@ -31,13 +31,13 @@ Infer : Type -> Type
 Infer = InferT Identity
 
 public export
-runInferTAndGeneralize
+runInferT
    : Monad m
   => InferT m a
   -> (a -> Generalize b)
   -> m (Either InferError b)
-runInferTAndGeneralize (MkInferT body) generalizeA = do
-  result <- runUnifyTyTAndGeneralize
+runInferT (MkInferT body) generalizeA = do
+  result <- runUnifyTyT
               (runExceptT body)
               (traverse generalizeA)
   pure $ case result of
@@ -46,12 +46,12 @@ runInferTAndGeneralize (MkInferT body) generalizeA = do
     Right (Right a) => Right a
 
 public export
-runInferAndGeneralize
+runInfer
    : Infer a
   -> (a -> Generalize b)
   -> Either InferError b
-runInferAndGeneralize body generalizeA
-  = runIdentity $ runInferTAndGeneralize body generalizeA
+runInfer body generalizeA
+  = runIdentity $ runInferT body generalizeA
 
 -----------------------------------------
 
@@ -289,31 +289,31 @@ mutual
     pure (gg', PPar a b, dd')
 
 public export
-typecheckCmd
+runInferCmd
    : UCmd
   -> Either InferError (PolyContext, PolyContext)
-typecheckCmd cmd
-  = runInferAndGeneralize
+runInferCmd cmd
+  = runInfer
       (inferCmd cmd)
       (\(g, d) => do
         generalizePair g d)
 
 public export
-typecheckProducer
+runInferProducer
    : UProducer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
-typecheckProducer producer
-  = runInferAndGeneralize
+runInferProducer producer
+  = runInfer
       (inferProducer producer)
       (\(g, a, d) => do
         generalizeTriple g a d)
 
 public export
-typecheckConsumer
+runInferConsumer
    : UConsumer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
-typecheckConsumer consumer
-  = runInferAndGeneralize
+runInferConsumer consumer
+  = runInfer
       (inferConsumer consumer)
       (\(g, a, d) => do
         generalizeTriple g a d)

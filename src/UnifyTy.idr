@@ -23,13 +23,17 @@ public export
 UnifyTy : Type -> Type
 UnifyTy = UnifyTyT Identity
 
+-- runUnifyTy is defined in "Generalize.idr". Outside of this module, the most
+-- common way to use UnifyTy is to calculate a partial value like a PTy which
+-- contains unification variables, and to generalize the value by replacing
+-- those unification variables with quantified variables.
 public export
-runUnifyTyT : Monad m => UnifyTyT m a -> m (Either UnifyTyError a)
-runUnifyTyT (MkUnifyTyT body) = runUnionFindT (runExceptT body)
+runUnifyTyTWithoutGeneralizing : Monad m => UnifyTyT m a -> m (Either UnifyTyError a)
+runUnifyTyTWithoutGeneralizing (MkUnifyTyT body) = runUnionFindT (runExceptT body)
 
 public export
-runUnifyTy : UnifyTy a -> Either UnifyTyError a
-runUnifyTy = runIdentity . runUnifyTyT
+runUnifyTyWithoutGeneralizing : UnifyTy a -> Either UnifyTyError a
+runUnifyTyWithoutGeneralizing = runIdentity . runUnifyTyTWithoutGeneralizing
 
 -----------------------------------------
 
@@ -229,7 +233,7 @@ example1 = do
 
 public export
 test1 : IO ()
-test1 = printLn ( runUnifyTy example1
+test1 = printLn ( runUnifyTyWithoutGeneralizing example1
                == ( Right
                   $ PImp (MetaVar 0)
                   $ PImp (MetaVar 0)
@@ -246,7 +250,7 @@ example2 = do
 
 public export
 test2 : IO ()
-test2 = printLn ( runUnifyTy example2
+test2 = printLn ( runUnifyTyWithoutGeneralizing example2
                == ( Left
                   $ TypeMismatch
                       (ImpF (MetaVar 0) (MetaVar 1))
@@ -262,7 +266,7 @@ example3 = do
 
 public export
 test3 : IO ()
-test3 = printLn ( runUnifyTy example3
+test3 = printLn ( runUnifyTyWithoutGeneralizing example3
                == ( Left
                   $ OccursCheckFailed
                       0
