@@ -1,3 +1,5 @@
+-- This module implements System L's typing rules. Given a UTerm, it infers the
+-- size of the {co,}context and the types of all the {co,}variables within.
 module Infer
 
 import Control.Monad.State

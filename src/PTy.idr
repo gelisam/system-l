@@ -1,3 +1,22 @@
+-- "PTy" stands for "Partial Type". The unification algorithm in "UnifyTy.idr"
+-- works by keeping track of what is known so far about a type, that is, it
+-- tracks partial information using a partial type. The unknown parts of the
+-- type are represented by unification variables, so that when unifying two
+-- partial types, the algorithm can track that two unknown parts in
+-- corresponding positions are known to be the same type. For example, if we
+-- learn that
+--
+--   PImp ?0 Nat == PImp ?1 Nat
+--
+-- then
+--
+--   PImp String Nat == PImp String Nat
+--
+-- would be a valid solution to this equation but
+--
+--   PImp String Nat == PImp Char Nat
+--
+-- would be an invalid solution.
 module PTy
 
 import Control.Monad.State

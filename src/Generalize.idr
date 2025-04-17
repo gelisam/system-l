@@ -1,3 +1,8 @@
+-- Once all the type equations from the typing rules have been applied and we
+-- have learned all there is to learn about the shape of the types involved, if
+-- there are portions in a PTy for which we still haven't pinned down which type
+-- they should be, that means that any type would have worked. In that case, we
+-- "generalize" the PTy into a PolyTy, to indicate which parts can be any type.
 module Generalize
 
 import Control.Monad.State
@@ -72,10 +77,10 @@ implementation Monad Generalize where
 
 ----------------------------------------
 
-generalizeZonked
+generalizeZonkedImpl
    : PTy
   -> StateT (SortedMap Node Nat) UnifyTy PolyTy
-generalizeZonked (MetaVar node) = do
+generalizeZonkedImpl (MetaVar node) = do
   nodeToQVar <- get
   case lookup node nodeToQVar of
     Nothing => do
@@ -85,15 +90,15 @@ generalizeZonked (MetaVar node) = do
       pure $ QVar newQVar
     Just qvar => do
       pure $ QVar qvar
-generalizeZonked (Ctor cty) = do
-  cty' <- traverse generalizeZonked cty
+generalizeZonkedImpl (Ctor cty) = do
+  cty' <- traverse generalizeZonkedImpl cty
   pure $ Ctor cty'
 
 public export
 generalizeType : PTy -> Generalize PolyTy
 generalizeType pty = MkGeneralize $ do
   zonked <- lift $ zonk pty
-  generalizeZonked zonked
+  generalizeZonkedImpl zonked
 
 public export
 generalizeContext : PContext -> Generalize PolyContext

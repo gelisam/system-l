@@ -1,3 +1,4 @@
+-- An index into a context which singles out a single type in a {co,}context.
 module Elem
 
 import Ty

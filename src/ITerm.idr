@@ -1,4 +1,7 @@
--- intrinsically-typed terms
+-- "ITerm" stands for "Intrinsically-typed Term". They are used in
+-- "Examples.idr" to demonstrate that our type inference algorithm on UTerms
+-- gives a type which is similar to the type inferred by Idris for the
+-- corresponding ITerms.
 module ITerm
 
 import Cover

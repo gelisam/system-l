@@ -1,3 +1,14 @@
+-- "PolyTy" stands for "Polymorphic Type". System L itself does not have
+-- polymorphic types, but it is very convenient to be able to write a definition
+-- like
+--
+--   iapply : ICmd [Imp a b, a] [b]
+--
+-- once and to not have to write a different version for every types `a` and `b`
+-- could stand for. Thus, while sub-terms cannot have a polymorphic type, we
+-- allow the top-level definitions in "Example.idr" to have a polymorphic type.
+-- This approach also makes it possible to accept UTerms whose type would
+-- otherwise be ambiguous.
 module PolyTy
 
 import Control.Monad.State

@@ -1,3 +1,8 @@
+-- "UnifyTy" stands for "Unification for Types". This module can unify two
+-- PTy's, figuring out which Ty the unification variables at matching positions
+-- must refer to and detecting contradictions. The module "Infer.idr" uses this
+-- when traversing a UTerm to make sure that two types which are supposed to be
+-- equal according to the typing rules really are equal.
 module UnifyTy
 
 import Control.Monad.State
@@ -58,13 +63,12 @@ newMetaVar = MkUnifyTyT $ do
   node <- lift $ newNode Nothing
   pure $ MetaVar node
 
-public export
-occursCheck
+occursCheckImpl
    : Monad m
   => Node
   -> CTy
   -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-occursCheck needleNode cty = do
+occursCheckImpl needleNode cty = do
   root <- lift $ findRoot needleNode
   bools <- traverse (rootOccursInPTy root) cty
   if any id bools
@@ -108,12 +112,12 @@ zonk pty = MkUnifyTyT $ do
   zonkImpl pty
 
 mutual
-  unifyMetaVars
+  unifyMetaVarsImpl
      : Monad m
     => Node
     -> Node
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyMetaVars node1 node2 = do
+  unifyMetaVarsImpl node1 node2 = do
     root1 <- lift $ findRoot node1
     root2 <- lift $ findRoot node2
     if root1 == root2
@@ -129,67 +133,67 @@ mutual
           (Nothing, Just cty2) => 
             lift $ union root1 root2 (Just cty2)
           (Just cty1, Just cty2) => do
-            unifyCTys cty1 cty2 
+            unifyCTysImpl cty1 cty2 
             lift $ union root1 root2 (Just cty1)
   
-  unifyMetaVarWithCty
+  unifyMetaVarWithCtyImpl
      : Monad m
     => Node
     -> CTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyMetaVarWithCty node1 cty2 = do
+  unifyMetaVarWithCtyImpl node1 cty2 = do
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
       Nothing => do
-        occursCheck root1 cty2
+        occursCheckImpl root1 cty2
         lift $ setValue root1 $ Just cty2
       Just cty1 => 
-        unifyCTys cty1 cty2
+        unifyCTysImpl cty1 cty2
   
-  unifyPTys
+  unifyPTysImpl
      : Monad m
     => PTy
     -> PTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyPTys (MetaVar node1) (MetaVar node2) = 
-    unifyMetaVars node1 node2
-  unifyPTys (MetaVar node) (Ctor cty) = 
-    unifyMetaVarWithCty node cty
-  unifyPTys (Ctor cty) (MetaVar node) = 
-    unifyMetaVarWithCty node cty
-  unifyPTys (Ctor cty1) (Ctor cty2) = 
-    unifyCTys cty1 cty2
+  unifyPTysImpl (MetaVar node1) (MetaVar node2) = 
+    unifyMetaVarsImpl node1 node2
+  unifyPTysImpl (MetaVar node) (Ctor cty) = 
+    unifyMetaVarWithCtyImpl node cty
+  unifyPTysImpl (Ctor cty) (MetaVar node) = 
+    unifyMetaVarWithCtyImpl node cty
+  unifyPTysImpl (Ctor cty1) (Ctor cty2) = 
+    unifyCTysImpl cty1 cty2
   
-  unifyCTys
+  unifyCTysImpl
      : Monad m
     => CTy
     -> CTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyCTys (ImpF a1 b1) (ImpF a2 b2) = do
-    unifyPTys a1 a2
-    unifyPTys b1 b2
-  unifyCTys (BridgeF a1 b1) (BridgeF a2 b2) = do
-    unifyPTys a1 a2
-    unifyPTys b1 b2
-  unifyCTys (TenF a1 b1) (TenF a2 b2) = do
-    unifyPTys a1 a2
-    unifyPTys b1 b2
-  unifyCTys (SumF a1 b1) (SumF a2 b2) = do
-    unifyPTys a1 a2
-    unifyPTys b1 b2
-  unifyCTys (WithF a1 b1) (WithF a2 b2) = do
-    unifyPTys a1 a2
-    unifyPTys b1 b2
-  unifyCTys (ParF a1 b1) (ParF a2 b2) = do
-    unifyPTys a1 a2
-    unifyPTys b1 b2
-  unifyCTys cty1 cty2 = do
+  unifyCTysImpl (ImpF a1 b1) (ImpF a2 b2) = do
+    unifyPTysImpl a1 a2
+    unifyPTysImpl b1 b2
+  unifyCTysImpl (BridgeF a1 b1) (BridgeF a2 b2) = do
+    unifyPTysImpl a1 a2
+    unifyPTysImpl b1 b2
+  unifyCTysImpl (TenF a1 b1) (TenF a2 b2) = do
+    unifyPTysImpl a1 a2
+    unifyPTysImpl b1 b2
+  unifyCTysImpl (SumF a1 b1) (SumF a2 b2) = do
+    unifyPTysImpl a1 a2
+    unifyPTysImpl b1 b2
+  unifyCTysImpl (WithF a1 b1) (WithF a2 b2) = do
+    unifyPTysImpl a1 a2
+    unifyPTysImpl b1 b2
+  unifyCTysImpl (ParF a1 b1) (ParF a2 b2) = do
+    unifyPTysImpl a1 a2
+    unifyPTysImpl b1 b2
+  unifyCTysImpl cty1 cty2 = do
     throwE (TypeMismatch cty1 cty2)
 
 public export
 unify : Monad m => PTy -> PTy -> UnifyTyT m ()
 unify pty1 pty2 = MkUnifyTyT $ do
-  unifyPTys pty1 pty2
+  unifyPTysImpl pty1 pty2
 
 public export
 showUnifyTyError : UnifyTyError -> String
@@ -231,6 +235,11 @@ example1 = do
   unify (PImp meta1 meta2) (PImp meta2 meta3)
   zonk $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
 
+-- The algorithm doesn't guarantee which variable is chosen as the root, so what I really want to test is that there are two distinct nodes n1 and n2 such that the result is
+--
+--   Right $ PImp n1 $ PImp n1 $ PImp n1 n2
+--
+-- But it is much easier to just inspect the result and use the roots 0 and 3 which happen to be chosen by the algorithm and use that as the test case.
 public export
 test1 : IO ()
 test1 = printLn ( runUnifyTyWithoutGeneralizing example1

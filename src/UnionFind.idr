@@ -9,7 +9,7 @@ import ExceptT
 ----------------------------------------
 
 -- A `Node` points to a value of type `Maybe v`. If it has been unioned with
--- other Nodes, all the nodes in the set points to the same `Maybe v`.
+-- other Nodes, all the nodes in the set point to the same `Maybe v`.
 public export
 Node : Type
 Node = Nat
@@ -64,20 +64,20 @@ newNode maybeV = MkUnionFindT $ do
   put $ MkS (newNode + 1) parents values' ranks
   pure newNode
 
-findParent
+findParentImpl
    : Monad m
   => Node
   -> StateT (S v) m (Maybe Node)
-findParent node = do
+findParentImpl node = do
   MkS _ parents _ _ <- get
   pure $ lookup node parents
 
-setParent
+setParentImpl
    : Monad m
   => Node
   -> Root
   -> StateT (S v) m ()
-setParent node parent = do
+setParentImpl node parent = do
   MkS nextNode parents values ranks <- get
   let parents' = insert node parent parents
   put $ MkS nextNode parents' values ranks
@@ -87,7 +87,7 @@ findRootImpl
   => Node
   -> StateT (S v) m Node
 findRootImpl node = do
-  findParent node >>= \case
+  findParentImpl node >>= \case
     Nothing => do
       -- No parent, so it's a root.
       pure node
@@ -95,7 +95,7 @@ findRootImpl node = do
       root <- findRootImpl parent
       -- Path compression: point directly to the root so the next 'findRoot' is
       -- O(1).
-      setParent node root
+      setParentImpl node root
       pure root
 
 public export

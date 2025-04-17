@@ -1,4 +1,12 @@
--- untyped terms
+-- "UTerm" stands for "Untyped Term". I recommend comparing with "ITerm.idr",
+-- which has the same structure but with more precise types, to clarify the
+-- purpose of the sub-terms.
+--
+-- One important difference between ITerm and UTerm is that UTerm uses String
+-- variable names to select {co,}variables, while with ITerm it is always the
+-- {co,}variables at the front of the {co,}context which are used. As a result,
+-- ITerm need to use ibring{,Co}VarToFront to reorder the variables in the
+-- {,co}context, while UTerm does not.
 module UTerm
 
 mutual

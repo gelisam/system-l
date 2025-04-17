@@ -1,4 +1,5 @@
--- types (connectives)
+-- "Ty" stands for "Type". See also "PTy" and "PolyTy", which are variants of
+-- "Ty" implemented with the same underlying "TyF" base functor.
 module Ty
 
 public export
