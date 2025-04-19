@@ -30,31 +30,31 @@ record GeneralizeTy a where
   unGeneralizeTy : StateT (SortedMap Node Nat) UnifyTy a
 
 -- This language does not have let-generalization, so we can simply replace all
--- the unification variables with quantified variables. This API encourages
--- correct usage, namely generalizing everything at the very end of a UnifyTy
--- computation so that the unification variables cannot be used again.
+-- the unification variables with quantified variables.
+--
+-- Note that the input not a monad stack which allows both UnifyTy and
+-- GeneralizeTy effects to be interleaved, it is a UnifyTy computation followed
+-- by a GeneralizeTy computation. This API encourages correct usage, namely
+-- generalizing everything at the very end so that the unification variables
+-- cannot be used again.
 public export
 runUnifyTyT
    : Monad m
-  => UnifyTyT m a
-  -> (a -> GeneralizeTy b)
-  -> m (Either UnifyTyError b)
-runUnifyTyT body1 generalizeA = do
+  => UnifyTyT m (GeneralizeTy a)
+  -> m (Either UnifyTyError a)
+runUnifyTyT mainUnifyAction = do
   runUnifyTyTWithoutGeneralizing $ do
-    x <- body1
-    let body2' : GeneralizeTy b
-        body2' = generalizeA x
-        body2'' : UnifyTy b
-        body2'' = evalStateT Map.empty $ unGeneralizeTy body2'
-    liftUnifyTy body2''
+    finalGeneralizeAction <- mainUnifyAction
+    let finalUnifyAction : UnifyTy a
+        finalUnifyAction = evalStateT Map.empty $ unGeneralizeTy finalGeneralizeAction
+    liftUnifyTy finalUnifyAction
 
 public export
 runUnifyTy
-   : UnifyTy a
-  -> (a -> GeneralizeTy b)
-  -> Either UnifyTyError b
-runUnifyTy body1 generalizeA
-  = runIdentity $ runUnifyTyT body1 generalizeA
+   : UnifyTy (GeneralizeTy a)
+  -> Either UnifyTyError a
+runUnifyTy body
+  = runIdentity $ runUnifyTyT body
 
 ----------------------------------------
 
@@ -124,18 +124,19 @@ generalizeTriple g pty d = do
 
 ----------------------------------------
 
-example1 : UnifyTy PTy
+example1 : UnifyTy (GeneralizeTy PolyTy)
 example1 = do
   meta1 <- newMetaVar
   meta2 <- newMetaVar
   meta3 <- newMetaVar
   meta4 <- newMetaVar
   unify (PImp meta1 meta2) (PImp meta2 meta3)
-  pure $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
+  pure $ do
+    generalizeType $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
 
 public export
 test1 : IO ()
-test1 = printLn ( runUnifyTy example1 generalizeType
+test1 = printLn ( runUnifyTy example1
                == ( Right
                   $ PolyImp (QVar 0)
                   $ PolyImp (QVar 0)

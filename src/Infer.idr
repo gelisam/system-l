@@ -35,25 +35,35 @@ Infer = InferT Identity
 public export
 runInferT
    : Monad m
-  => InferT m a
-  -> (a -> GeneralizeTy b)
-  -> m (Either InferError b)
-runInferT (MkInferT body) generalizeA = do
-  result <- runUnifyTyT
-              (runExceptT body)
-              (traverse generalizeA)
-  pure $ case result of
-    Left e => Left $ UnifyTyError e
-    Right (Left e) => Left e
-    Right (Right a) => Right a
+  => InferT m (GeneralizeTy a)
+  -> m (Either InferError a)
+runInferT (MkInferT body) = do
+  result <- runUnifyTyT $ do
+    let mainUnifyAction : UnifyTyT m (Either InferError (GeneralizeTy a))
+        mainUnifyAction = runExceptT body
+    result <- mainUnifyAction
+    case (the (Either InferError (GeneralizeTy a)) result) of
+      Left inferError => do
+        pure $ do
+          pure $ Left inferError
+      Right finalGeneralizeAction => do
+        pure $ do
+          a <- finalGeneralizeAction
+          pure $ Right a
+  case (the (Either UnifyTyError (Either InferError a)) result) of
+    Left unifyError => do
+      pure $ Left $ UnifyTyError unifyError
+    Right (Left inferError) => do
+      pure $ Left inferError
+    Right (Right a) => do
+      pure $ Right a
 
 public export
 runInfer
-   : Infer a
-  -> (a -> GeneralizeTy b)
-  -> Either InferError b
-runInfer body generalizeA
-  = runIdentity $ runInferT body generalizeA
+   : Infer (GeneralizeTy a)
+  -> Either InferError a
+runInfer body
+  = runIdentity $ runInferT body
 
 -----------------------------------------
 
@@ -294,31 +304,25 @@ public export
 runInferCmd
    : UCmd
   -> Either InferError (PolyContext, PolyContext)
-runInferCmd cmd
-  = runInfer
-      (inferCmd cmd)
-      (\(g, d) => do
-        generalizePair g d)
+runInferCmd cmd = runInfer $ do
+  (g, d) <- inferCmd cmd
+  pure $ generalizePair g d
 
 public export
 runInferProducer
    : UProducer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
-runInferProducer producer
-  = runInfer
-      (inferProducer producer)
-      (\(g, a, d) => do
-        generalizeTriple g a d)
+runInferProducer producer = runInfer $ do
+  (g, a, d) <- inferProducer producer
+  pure $ generalizeTriple g a d
 
 public export
 runInferConsumer
    : UConsumer
   -> Either InferError (PolyContext, PolyTy, PolyContext)
-runInferConsumer consumer
-  = runInfer
-      (inferConsumer consumer)
-      (\(g, a, d) => do
-        generalizeTriple g a d)
+runInferConsumer consumer = runInfer $ do
+  (g, a, d) <- inferConsumer consumer
+  pure $ generalizeTriple g a d
 
 ----------------------------------------
 
