@@ -8,7 +8,7 @@ import Data.SortedMap as Map
 import Ty
 import UTerm
 import UTerm.ExceptT
-import UTerm.Generalize
+import UTerm.GeneralizeTy
 import UTerm.PolyTy
 import UTerm.PTy
 import UTerm.UnifyTy
@@ -36,7 +36,7 @@ public export
 runInferT
    : Monad m
   => InferT m a
-  -> (a -> Generalize b)
+  -> (a -> GeneralizeTy b)
   -> m (Either InferError b)
 runInferT (MkInferT body) generalizeA = do
   result <- runUnifyTyT
@@ -50,7 +50,7 @@ runInferT (MkInferT body) generalizeA = do
 public export
 runInfer
    : Infer a
-  -> (a -> Generalize b)
+  -> (a -> GeneralizeTy b)
   -> Either InferError b
 runInfer body generalizeA
   = runIdentity $ runInferT body generalizeA

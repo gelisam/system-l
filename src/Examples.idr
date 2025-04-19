@@ -11,7 +11,7 @@ import ITerm.Cover
 import ITerm.Elem
 import Ty
 import UTerm
-import UTerm.Generalize
+import UTerm.GeneralizeTy
 import UTerm.PolyTy
 import UTerm.PTy
 import UTerm.UnifyTy

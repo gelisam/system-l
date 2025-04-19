@@ -3,7 +3,7 @@
 -- there are portions in a PTy for which we still haven't pinned down which type
 -- they should be, that means that any type would have worked. In that case, we
 -- "generalize" the PTy into a PolyTy, to indicate which parts can be any type.
-module UTerm.Generalize
+module UTerm.GeneralizeTy
 
 import Control.Monad.State
 import Data.SortedMap as Map
@@ -25,9 +25,9 @@ PolyContext : Type
 PolyContext = List (String, PolyTy)
 
 public export
-record Generalize a where
-  constructor MkGeneralize
-  unGeneralize : StateT (SortedMap Node Nat) UnifyTy a
+record GeneralizeTy a where
+  constructor MkGeneralizeTy
+  unGeneralizeTy : StateT (SortedMap Node Nat) UnifyTy a
 
 -- This language does not have let-generalization, so we can simply replace all
 -- the unification variables with quantified variables. This API encourages
@@ -37,21 +37,21 @@ public export
 runUnifyTyT
    : Monad m
   => UnifyTyT m a
-  -> (a -> Generalize b)
+  -> (a -> GeneralizeTy b)
   -> m (Either UnifyTyError b)
 runUnifyTyT body1 generalizeA = do
   runUnifyTyTWithoutGeneralizing $ do
     x <- body1
-    let body2' : Generalize b
+    let body2' : GeneralizeTy b
         body2' = generalizeA x
         body2'' : UnifyTy b
-        body2'' = evalStateT Map.empty $ unGeneralize body2'
+        body2'' = evalStateT Map.empty $ unGeneralizeTy body2'
     liftUnifyTy body2''
 
 public export
 runUnifyTy
    : UnifyTy a
-  -> (a -> Generalize b)
+  -> (a -> GeneralizeTy b)
   -> Either UnifyTyError b
 runUnifyTy body1 generalizeA
   = runIdentity $ runUnifyTyT body1 generalizeA
@@ -59,21 +59,21 @@ runUnifyTy body1 generalizeA
 ----------------------------------------
 
 public export
-implementation Functor Generalize where
-  map f (MkGeneralize m)
-    = MkGeneralize $ map f m
+implementation Functor GeneralizeTy where
+  map f (MkGeneralizeTy m)
+    = MkGeneralizeTy $ map f m
 
 public export
-implementation Applicative Generalize where
+implementation Applicative GeneralizeTy where
   pure x
-    = MkGeneralize $ pure x
-  (MkGeneralize f) <*> (MkGeneralize x)
-    = MkGeneralize $ f <*> x
+    = MkGeneralizeTy $ pure x
+  (MkGeneralizeTy f) <*> (MkGeneralizeTy x)
+    = MkGeneralizeTy $ f <*> x
 
 public export
-implementation Monad Generalize where
-  (MkGeneralize ma) >>= f
-    = MkGeneralize $ ma >>= \a => unGeneralize (f a)
+implementation Monad GeneralizeTy where
+  (MkGeneralizeTy ma) >>= f
+    = MkGeneralizeTy $ ma >>= \a => unGeneralizeTy (f a)
 
 ----------------------------------------
 
@@ -95,27 +95,27 @@ generalizeZonkedImpl (Ctor cty) = do
   pure $ Ctor cty'
 
 public export
-generalizeType : PTy -> Generalize PolyTy
-generalizeType pty = MkGeneralize $ do
+generalizeType : PTy -> GeneralizeTy PolyTy
+generalizeType pty = MkGeneralizeTy $ do
   zonked <- lift $ zonk pty
   generalizeZonkedImpl zonked
 
 public export
-generalizeContext : PContext -> Generalize PolyContext
+generalizeContext : PContext -> GeneralizeTy PolyContext
 generalizeContext ctx = do
   for (Map.toList ctx) $ \(x, pty) => do
     poly <- generalizeType pty
     pure (x, poly)
 
 public export
-generalizePair : PContext -> PContext -> Generalize (PolyContext, PolyContext)
+generalizePair : PContext -> PContext -> GeneralizeTy (PolyContext, PolyContext)
 generalizePair g d = do
   g' <- generalizeContext g
   d' <- generalizeContext d
   pure (g', d')
 
 public export
-generalizeTriple : PContext -> PTy -> PContext -> Generalize (PolyContext, PolyTy, PolyContext)
+generalizeTriple : PContext -> PTy -> PContext -> GeneralizeTy (PolyContext, PolyTy, PolyContext)
 generalizeTriple g pty d = do
   g' <- generalizeContext g
   poly <- generalizeType pty

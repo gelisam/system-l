@@ -28,7 +28,7 @@ public export
 UnifyTy : Type -> Type
 UnifyTy = UnifyTyT Identity
 
--- runUnifyTy is defined in "Generalize.idr". Outside of this module, the most
+-- runUnifyTy is defined in "GeneralizeTy.idr". Outside of this module, the most
 -- common way to use UnifyTy is to calculate a partial value like a PTy which
 -- contains unification variables, and to generalize the value by replacing
 -- those unification variables with quantified variables.

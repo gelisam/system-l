@@ -1,4 +1,4 @@
-import UTerm.Generalize
+import UTerm.GeneralizeTy
 import UTerm.UnifyTy
 import UTerm.UnionFind
 import Examples
@@ -34,6 +34,6 @@ main = do
   UnifyTy.test1
   UnifyTy.test2
   UnifyTy.test3
-  Generalize.test1
+  GeneralizeTy.test1
   Examples.test1
   putStrLn "*** tests pass if no False is shown above ***"
