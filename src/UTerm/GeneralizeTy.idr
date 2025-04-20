@@ -130,7 +130,7 @@ example1 = do
   uvar2 <- newUVarTy
   uvar3 <- newUVarTy
   uvar4 <- newUVarTy
-  unify (PImp uvar1 uvar2) (PImp uvar2 uvar3)
+  unifyPTys (PImp uvar1 uvar2) (PImp uvar2 uvar3)
   pure $ do
     generalizeType $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
 

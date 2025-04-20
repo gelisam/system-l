@@ -130,7 +130,7 @@ unifyIdenticalContexts variableNotPresent ctx1 ctx2 = MkInferT $ do
         (\(pty1, _), (pty2, _) =>
           ( pty1  -- unused
           , \_ => do
-              lift $ unify pty1 pty2
+              lift $ unifyPTys pty1 pty2
               pure pty1
           )
         )
@@ -199,7 +199,7 @@ mutual
   inferCmd (UCut producerA consumerA) = do
     (g, a, d) <- inferProducer producerA
     (g', a', d') <- inferConsumer consumerA
-    liftUnifyTy $ unify a a'
+    liftUnifyTy $ unifyPTys a a'
     gg' <- mergeDisjointContexts g g'
     dd' <- mergeDisjointContexts d d'
     pure (gg', dd')

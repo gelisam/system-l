@@ -191,8 +191,8 @@ mutual
     throwE (TypeMismatch cty1 cty2)
 
 public export
-unify : Monad m => PTy -> PTy -> UnifyTyT m ()
-unify pty1 pty2 = MkUnifyTyT $ do
+unifyPTys : Monad m => PTy -> PTy -> UnifyTyT m ()
+unifyPTys pty1 pty2 = MkUnifyTyT $ do
   unifyPTysImpl pty1 pty2
 
 public export
@@ -232,7 +232,7 @@ example1 = do
   uvar2 <- newUVarTy
   uvar3 <- newUVarTy
   uvar4 <- newUVarTy
-  unify (PImp uvar1 uvar2) (PImp uvar2 uvar3)
+  unifyPTys (PImp uvar1 uvar2) (PImp uvar2 uvar3)
   zonk $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
 
 -- The algorithm doesn't guarantee which variable is chosen as the root, so what I really want to test is that there are two distinct nodes n1 and n2 such that the result is
@@ -255,7 +255,7 @@ example2 = do
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
   uvar3 <- newUVarTy
-  unify (PImp uvar1 uvar2) (PPar uvar2 uvar3)
+  unifyPTys (PImp uvar1 uvar2) (PPar uvar2 uvar3)
 
 public export
 test2 : IO ()
@@ -271,7 +271,7 @@ example3 : UnifyTy ()
 example3 = do
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
-  unify uvar1 (PImp uvar1 uvar2)
+  unifyPTys uvar1 (PImp uvar1 uvar2)
 
 public export
 test3 : IO ()
