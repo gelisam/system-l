@@ -178,6 +178,10 @@ public export
 implementation Monad m => Monad (UnionFindT v m) where
   MkUnionFindT ma >>= f = MkUnionFindT $ ma >>= \a => unUnionFindT (f a)
 
+public export
+implementation MonadTrans (UnionFindT v) where
+  lift = MkUnionFindT . lift
+
 ----------------------------------------
 
 example1 : UnionFind String (List (Maybe String))

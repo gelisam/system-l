@@ -61,6 +61,10 @@ implementation Monad m => Monad (UnifyTyT m) where
   (MkUnifyTyT ma) >>= f
     = MkUnifyTyT (ma >>= \a => unUnifyTyT (f a))
 
+public export
+implementation MonadTrans UnifyTyT where
+  lift = MkUnifyTyT . lift . lift
+
 -----------------------------------------
 
 public export

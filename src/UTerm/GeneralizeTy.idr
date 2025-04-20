@@ -60,8 +60,8 @@ runUnifyTy body
 
 public export
 implementation Functor GeneralizeTy where
-  map f (MkGeneralizeTy m)
-    = MkGeneralizeTy $ map f m
+  map f (MkGeneralizeTy body)
+    = MkGeneralizeTy $ map f body
 
 public export
 implementation Applicative GeneralizeTy where

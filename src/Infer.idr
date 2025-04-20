@@ -80,6 +80,10 @@ public export
 implementation Monad m => Monad (InferT m) where
   (MkInferT ma) >>= f = MkInferT $ ma >>= \a => unInferT (f a)
 
+public export
+implementation MonadTrans InferT where
+  lift = MkInferT . lift . lift
+
 -- Note that InferT discharges the MonadUnifyTy constraint, it does _not_
 -- delegate to the m. Being able to unify type variables in an important part of
 -- InferT's API.
