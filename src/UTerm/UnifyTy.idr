@@ -33,11 +33,16 @@ UnifyTy = UnifyTyT Identity
 -- contains unification variables, and to generalize the value by replacing
 -- those unification variables with quantified variables.
 public export
-runUnifyTyTWithoutGeneralizing : Monad m => UnifyTyT m a -> m (Either UnifyTyError a)
+runUnifyTyTWithoutGeneralizing
+   : Monad m
+  => UnifyTyT m a
+  -> m (Either UnifyTyError a)
 runUnifyTyTWithoutGeneralizing (MkUnifyTyT body) = runUnionFindT (runExceptT body)
 
 public export
-runUnifyTyWithoutGeneralizing : UnifyTy a -> Either UnifyTyError a
+runUnifyTyWithoutGeneralizing
+   : UnifyTy a
+  -> Either UnifyTyError a
 runUnifyTyWithoutGeneralizing = runIdentity . runUnifyTyTWithoutGeneralizing
 
 -----------------------------------------
@@ -53,7 +58,8 @@ implementation Monad m => Applicative (UnifyTyT m) where
 
 public export
 implementation Monad m => Monad (UnifyTyT m) where
-  (MkUnifyTyT ma) >>= f = MkUnifyTyT $ ma >>= \a => unUnifyTyT (f a)
+  (MkUnifyTyT ma) >>= f
+    = MkUnifyTyT (ma >>= \a => unUnifyTyT (f a))
 
 -----------------------------------------
 
