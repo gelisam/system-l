@@ -58,10 +58,10 @@ implementation Monad m => Monad (UnifyTyT m) where
 -----------------------------------------
 
 public export
-newMetaVar : Monad m => UnifyTyT m PTy
-newMetaVar = MkUnifyTyT $ do
+newUVarTy : Monad m => UnifyTyT m PTy
+newUVarTy = MkUnifyTyT $ do
   node <- lift $ newNode Nothing
-  pure $ MetaVar node
+  pure $ UVarTy node
 
 occursCheckImpl
    : Monad m
@@ -81,7 +81,7 @@ occursCheckImpl needleNode cty = do
       -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
     rootOccursInPTy needleRoot pty = do
       let go : PTy -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
-          go (MetaVar node) = do
+          go (UVarTy node) = do
             root <- lift $ findRoot node
             pure (root == needleRoot)
           go (Ctor cty) = do
@@ -94,11 +94,11 @@ zonkImpl
    : Monad m
   => PTy
   -> ExceptT UnifyTyError (UnionFindT CTy m) PTy
-zonkImpl (MetaVar node) = do
+zonkImpl (UVarTy node) = do
   root <- lift $ findRoot node
   (lift $ getValue root) >>= \case
     Nothing => 
-      pure $ MetaVar root
+      pure $ UVarTy root
     Just cty => do
       cty' <- traverse zonkImpl cty
       pure $ Ctor cty'
@@ -112,12 +112,12 @@ zonk pty = MkUnifyTyT $ do
   zonkImpl pty
 
 mutual
-  unifyMetaVarsImpl
+  unifyUVarTysImpl
      : Monad m
     => Node
     -> Node
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyMetaVarsImpl node1 node2 = do
+  unifyUVarTysImpl node1 node2 = do
     root1 <- lift $ findRoot node1
     root2 <- lift $ findRoot node2
     if root1 == root2
@@ -136,12 +136,12 @@ mutual
             unifyCTysImpl cty1 cty2 
             lift $ union root1 root2 (Just cty1)
   
-  unifyMetaVarWithCtyImpl
+  unifyUVarTyWithCtyImpl
      : Monad m
     => Node
     -> CTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyMetaVarWithCtyImpl node1 cty2 = do
+  unifyUVarTyWithCtyImpl node1 cty2 = do
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
       Nothing => do
@@ -155,12 +155,12 @@ mutual
     => PTy
     -> PTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyPTysImpl (MetaVar node1) (MetaVar node2) = 
-    unifyMetaVarsImpl node1 node2
-  unifyPTysImpl (MetaVar node) (Ctor cty) = 
-    unifyMetaVarWithCtyImpl node cty
-  unifyPTysImpl (Ctor cty) (MetaVar node) = 
-    unifyMetaVarWithCtyImpl node cty
+  unifyPTysImpl (UVarTy node1) (UVarTy node2) = 
+    unifyUVarTysImpl node1 node2
+  unifyPTysImpl (UVarTy node) (Ctor cty) = 
+    unifyUVarTyWithCtyImpl node cty
+  unifyPTysImpl (Ctor cty) (UVarTy node) = 
+    unifyUVarTyWithCtyImpl node cty
   unifyPTysImpl (Ctor cty1) (Ctor cty2) = 
     unifyCTysImpl cty1 cty2
   
@@ -228,12 +228,12 @@ implementation Eq UnifyTyError where
 
 example1 : UnifyTy PTy
 example1 = do
-  meta1 <- newMetaVar
-  meta2 <- newMetaVar
-  meta3 <- newMetaVar
-  meta4 <- newMetaVar
-  unify (PImp meta1 meta2) (PImp meta2 meta3)
-  zonk $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
+  uvar1 <- newUVarTy
+  uvar2 <- newUVarTy
+  uvar3 <- newUVarTy
+  uvar4 <- newUVarTy
+  unify (PImp uvar1 uvar2) (PImp uvar2 uvar3)
+  zonk $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
 
 -- The algorithm doesn't guarantee which variable is chosen as the root, so what I really want to test is that there are two distinct nodes n1 and n2 such that the result is
 --
@@ -244,34 +244,34 @@ public export
 test1 : IO ()
 test1 = printLn ( runUnifyTyWithoutGeneralizing example1
                == ( Right
-                  $ PImp (MetaVar 0)
-                  $ PImp (MetaVar 0)
-                  $ PImp (MetaVar 0) (MetaVar 3)
+                  $ PImp (UVarTy 0)
+                  $ PImp (UVarTy 0)
+                  $ PImp (UVarTy 0) (UVarTy 3)
                   )
                 )
 
 example2 : UnifyTy ()
 example2 = do
-  meta1 <- newMetaVar
-  meta2 <- newMetaVar
-  meta3 <- newMetaVar
-  unify (PImp meta1 meta2) (PPar meta2 meta3)
+  uvar1 <- newUVarTy
+  uvar2 <- newUVarTy
+  uvar3 <- newUVarTy
+  unify (PImp uvar1 uvar2) (PPar uvar2 uvar3)
 
 public export
 test2 : IO ()
 test2 = printLn ( runUnifyTyWithoutGeneralizing example2
                == ( Left
                   $ TypeMismatch
-                      (ImpF (MetaVar 0) (MetaVar 1))
-                      (ParF (MetaVar 1) (MetaVar 2))
+                      (ImpF (UVarTy 0) (UVarTy 1))
+                      (ParF (UVarTy 1) (UVarTy 2))
                   )
                 )
 
 example3 : UnifyTy ()
 example3 = do
-  meta1 <- newMetaVar
-  meta2 <- newMetaVar
-  unify meta1 (PImp meta1 meta2)
+  uvar1 <- newUVarTy
+  uvar2 <- newUVarTy
+  unify uvar1 (PImp uvar1 uvar2)
 
 public export
 test3 : IO ()
@@ -279,7 +279,7 @@ test3 = printLn ( runUnifyTyWithoutGeneralizing example3
                == ( Left
                   $ OccursCheckFailed
                       0
-                      (ImpF (MetaVar 0) (MetaVar 1))
+                      (ImpF (UVarTy 0) (UVarTy 1))
                   )
                 )
 

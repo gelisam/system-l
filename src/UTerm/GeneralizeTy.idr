@@ -80,7 +80,7 @@ implementation Monad GeneralizeTy where
 generalizeZonkedImpl
    : PTy
   -> StateT (SortedMap Node Nat) UnifyTy PolyTy
-generalizeZonkedImpl (MetaVar node) = do
+generalizeZonkedImpl (UVarTy node) = do
   nodeToQVar <- get
   case lookup node nodeToQVar of
     Nothing => do
@@ -126,13 +126,13 @@ generalizeTriple g pty d = do
 
 example1 : UnifyTy (GeneralizeTy PolyTy)
 example1 = do
-  meta1 <- newMetaVar
-  meta2 <- newMetaVar
-  meta3 <- newMetaVar
-  meta4 <- newMetaVar
-  unify (PImp meta1 meta2) (PImp meta2 meta3)
+  uvar1 <- newUVarTy
+  uvar2 <- newUVarTy
+  uvar3 <- newUVarTy
+  uvar4 <- newUVarTy
+  unify (PImp uvar1 uvar2) (PImp uvar2 uvar3)
   pure $ do
-    generalizeType $ PImp meta1 $ PImp meta2 $ PImp meta3 meta4
+    generalizeType $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
 
 public export
 test1 : IO ()

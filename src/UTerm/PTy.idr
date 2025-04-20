@@ -27,10 +27,10 @@ import UTerm.UnionFind
 ----------------------------------------
 
 mutual
-  -- Partial Type, meaning that part of the type can be a MetaVar
+  -- Partial Type, meaning that part of the type can be a UVarTy
   public export
   data PTy : Type where
-    MetaVar : Node -> PTy
+    UVarTy : Node -> PTy
     Ctor : CTy -> PTy
 
   -- Constructor-headed partial Type
@@ -84,7 +84,7 @@ tyToCTy (MkTy tyf)
 
 public export
 implementation Show PTy where
-  showPrec p (MetaVar node)
+  showPrec p (UVarTy node)
     = "?" ++ show node
   showPrec p (Ctor (ImpF a b))
     = showParens (p /= Open)
@@ -107,7 +107,7 @@ implementation Show PTy where
 
 public export
 implementation Eq PTy where
-  MetaVar node1 == MetaVar node2
+  UVarTy node1 == UVarTy node2
     = node1 == node2
   Ctor (ImpF a1 b1) == Ctor (ImpF a2 b2)
     = a1 == a2

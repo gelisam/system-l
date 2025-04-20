@@ -209,7 +209,7 @@ mutual
     => UProducer
     -> InferT m (PContext, PTy, PContext)
   inferProducer (UVar x) = do
-    a <- liftUnifyTy $ newMetaVar
+    a <- liftUnifyTy $ newUVarTy
     pure (Map.singleton x a, a, Map.empty)
   inferProducer (UMu x g_to_ad) = do
     (g, ad) <- inferCmd g_to_ad
@@ -234,10 +234,10 @@ mutual
     pure (gg', PTen a b, dd')
   inferProducer (ULeft producerA) = do
     (g, a, d) <- inferProducer producerA
-    b <- liftUnifyTy $ newMetaVar
+    b <- liftUnifyTy $ newUVarTy
     pure (g, PSum a b, d)
   inferProducer (URight producerB) = do
-    a <- liftUnifyTy $ newMetaVar
+    a <- liftUnifyTy $ newUVarTy
     (g, b, d) <- inferProducer producerB
     pure (g, PSum a b, d)
   inferProducer (UCoMatchWith producerA producerB) = do
@@ -257,7 +257,7 @@ mutual
     => UConsumer
     -> InferT m (PContext, PTy, PContext)
   inferConsumer (UCoVar x) = do
-    a <- liftUnifyTy $ newMetaVar
+    a <- liftUnifyTy $ newUVarTy
     pure (Map.empty, a, Map.singleton x a)
   inferConsumer (UCoMu x cmd) = do
     (g, d) <- inferCmd cmd
@@ -287,10 +287,10 @@ mutual
     pure (gg', PSum a b, dd')
   inferConsumer (UFst consumerA) = do
     (g, a, d) <- inferConsumer consumerA
-    b <- liftUnifyTy $ newMetaVar
+    b <- liftUnifyTy $ newUVarTy
     pure (g, PWith a b, d)
   inferConsumer (USnd consumerB) = do
-    a <- liftUnifyTy $ newMetaVar
+    a <- liftUnifyTy $ newUVarTy
     (g, b, d) <- inferConsumer consumerB
     pure (g, PWith a b, d)
   inferConsumer (UHandlePar consumerA consumerB) = do

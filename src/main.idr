@@ -14,9 +14,9 @@ import Examples
 --   test1 : IO ()
 --   test1 = printLn ( runUnifyTy example1
 --                  == ( Right
---                     $ PImp (MetaVar 0)
---                     $ PImp (MetaVar 0)
---                     $ PImp (MetaVar 0) (MetaVar 1)
+--                     $ PImp (UVarTy 0)
+--                     $ PImp (UVarTy 0)
+--                     $ PImp (UVarTy 0) (UVarTy 1)
 --                     )
 --                   )
 --
