@@ -240,8 +240,8 @@ implementation Monad m => MonadUnionFind v (UnionFindT v m) where
 
 public export
 implementation MonadUnionFind v m => MonadUnionFind v (StateT s m) where
-  liftUnionFind body = lift $ liftUnionFind body
+  liftUnionFind = lift . liftUnionFind
 
 public export
 implementation MonadUnionFind v m => MonadUnionFind v (ExceptT e m) where
-  liftUnionFind body = lift $ liftUnionFind body
+  liftUnionFind = lift . liftUnionFind

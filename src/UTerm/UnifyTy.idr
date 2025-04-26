@@ -315,8 +315,8 @@ implementation Monad m => MonadUnifyTy (UnifyTyT m) where
 
 public export
 implementation MonadUnifyTy m => MonadUnifyTy (StateT s m) where
-  liftUnifyTy body = lift $ liftUnifyTy body
+  liftUnifyTy = lift . liftUnifyTy
 
 public export
 implementation MonadUnifyTy m => MonadUnifyTy (ExceptT e m) where
-  liftUnifyTy body = lift $ liftUnifyTy body
+  liftUnifyTy = lift . liftUnifyTy
