@@ -7,12 +7,12 @@ import Data.SortedMap as Map
 
 import Ty
 import UTerm
-import UTerm.ExceptT
 import UTerm.GeneralizeTy
 import UTerm.PolyTy
 import UTerm.PTy
 import UTerm.UnifyTy
 import UTerm.UnionFind
+import Util.ExceptT
 
 ----------------------------------------
 

@@ -4,7 +4,7 @@ import Control.Monad.State
 import Data.Maybe
 import Data.SortedMap
 
-import UTerm.ExceptT
+import Util.ExceptT
 
 ----------------------------------------
 

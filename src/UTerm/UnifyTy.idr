@@ -8,9 +8,9 @@ module UTerm.UnifyTy
 import Control.Monad.State
 
 import Ty
-import UTerm.ExceptT
 import UTerm.PTy
 import UTerm.UnionFind
+import Util.ExceptT
 
 ----------------------------------------
 
