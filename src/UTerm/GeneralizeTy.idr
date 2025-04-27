@@ -13,12 +13,13 @@ import UTerm.PolyTy
 import UTerm.PTy
 import UTerm.UnifyTy
 import UTerm.UnionFind
+import Util.Map as Map
 
 ----------------------------------------
 
 public export
 PContext : Type
-PContext = SortedMap String PTy
+PContext = Map String PTy
 
 public export
 PolyContext : Type
@@ -27,7 +28,7 @@ PolyContext = List (String, PolyTy)
 public export
 record GeneralizeTy a where
   constructor MkGeneralizeTy
-  unGeneralizeTy : StateT (SortedMap Node Nat) UnifyTy a
+  unGeneralizeTy : StateT (Map Node Nat) UnifyTy a
 
 -- This language does not have let-generalization, so we can simply replace all
 -- the unification variables with quantified variables.
@@ -79,7 +80,7 @@ implementation Monad GeneralizeTy where
 
 generalizeZonkedImpl
    : PTy
-  -> StateT (SortedMap Node Nat) UnifyTy PolyTy
+  -> StateT (Map Node Nat) UnifyTy PolyTy
 generalizeZonkedImpl (UVarTy node) = do
   nodeToQVar <- get
   case lookup node nodeToQVar of

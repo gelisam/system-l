@@ -13,6 +13,8 @@ import UTerm.PTy
 import UTerm.UnifyTy
 import UTerm.UnionFind
 import Util.ExceptT
+import Util.Map as Map
+import Util.These
 
 ----------------------------------------
 
@@ -69,7 +71,7 @@ runInfer body
 
 public export
 implementation Monad m => Functor (InferT m) where
-  map f (MkInferT m) = MkInferT $ map f m
+  map f (MkInferT body) = MkInferT $ map f body
 
 public export
 implementation Monad m => Applicative (InferT m) where
@@ -105,19 +107,12 @@ mergeDisjointContexts
   -> PContext
   -> InferT m PContext
 mergeDisjointContexts ctx1 ctx2 = MkInferT $ do
-  let falses1, falses2, bools : SortedMap String Bool
-      falses1 = map (const False) ctx1
-      falses2 = map (const False) ctx2
-      bools = Map.mergeWith (\x, y => True) falses1 falses2
-  let pairs, trues : List (String, Bool)
-      pairs = Map.toList bools
-      trues = filter snd pairs
-  let conflictingVars : List String
-      conflictingVars = map fst trues
-  case conflictingVars of
-    [] => do
-      pure $ Map.mergeLeft ctx1 ctx2
-    x::_ => do
+  sequence $ Map.withKey $ Map.union ctx1 ctx2 $ \case
+    This pty1 => \_ => do
+      pure pty1
+    That pty2 => \_ => do
+      pure pty2
+    Both pty1 pty2 => \x => do
       throwE $ VariableUsedTwice x
 
 unifyIdenticalContexts
@@ -127,28 +122,14 @@ unifyIdenticalContexts
   -> PContext
   -> InferT m PContext
 unifyIdenticalContexts variableNotPresent ctx1 ctx2 = MkInferT $ do
-  let throws1, throws2, actions : SortedMap String (PTy, String -> ExceptT InferError (UnifyTyT m) PTy)
-      throws1 = map (\pty => (pty, throwE . variableNotPresent)) ctx1
-      throws2 = map (\pty => (pty, throwE . variableNotPresent)) ctx2
-      actions = Map.mergeWith
-        (\(pty1, _), (pty2, _) =>
-          ( pty1  -- unused
-          , \_ => do
-              lift $ unifyPTys pty1 pty2
-              pure pty1
-          )
-        )
-        throws1
-        throws2
-  let pairs : List (String, ExceptT InferError (UnifyTyT m) PTy)
-      pairs = (\(x, (_, action)) => (x, action x))
-          <$> Map.toList actions
-
-  -- pairs' : List (String, PTy)
-  pairs' <- for pairs $ \(x, action) => do
-    pty <- action
-    pure (x, pty)
-  pure $ Map.fromList pairs'
+  sequence $ Map.withKey $ Map.union ctx1 ctx2 $ \case
+    This _ => \x => do
+      throwE $ variableNotPresent x
+    That _ => \x => do
+      throwE $ variableNotPresent x
+    Both pty1 pty2 => \x => do
+      lift $ unifyPTys pty1 pty2
+      pure pty1
 
 unifyIdenticalGammas
    : Monad m

@@ -5,6 +5,7 @@ import Data.Maybe
 import Data.SortedMap
 
 import Util.ExceptT
+import Util.Map
 
 ----------------------------------------
 
@@ -27,12 +28,12 @@ record S v where
   nextNode : Node
   -- Following the chain of parents always leads to a Root, which does not have
   -- a parent.
-  parents : SortedMap Node Node
+  parents : Map Node Node
   -- Missing keys map to 'Nothing'.
-  values : SortedMap Root v
+  values : Map Root v
   -- The approximate worst-case number of parent-to-parent hops needed for a
   -- Node to reach this Root. Missing keys map to 0.
-  ranks : SortedMap Root Nat
+  ranks : Map Root Nat
 
 -- Wrapped in a State monad for easier manipulation.
 public export

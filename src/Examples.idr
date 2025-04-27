@@ -3,8 +3,6 @@
 -- a type which is equivalent to the intrinsic type, up to reordering.
 module Examples
 
-import Data.SortedMap as Map
-
 import Infer
 import ITerm
 import ITerm.Cover
