@@ -65,6 +65,10 @@ public export
 implementation MonadTrans UnifyTyT where
   lift = MkUnifyTyT . lift . lift
 
+public export
+implementation MonadUnionFind v m => MonadUnionFind v (UnifyTyT m) where
+  liftUnionFind = lift . liftUnionFind
+
 -----------------------------------------
 
 public export
@@ -107,7 +111,7 @@ zonkImpl
 zonkImpl (UVarTy node) = do
   root <- lift $ findRoot node
   (lift $ getValue root) >>= \case
-    Nothing => 
+    Nothing =>
       pure $ UVarTy root
     Just cty => do
       cty' <- traverse zonkImpl cty
@@ -136,16 +140,16 @@ mutual
         maybeV1 <- lift $ getValue root1
         maybeV2 <- lift $ getValue root2
         case (maybeV1, maybeV2) of
-          (Nothing, Nothing) => 
+          (Nothing, Nothing) =>
             lift $ union root1 root2 Nothing
-          (Just cty1, Nothing) => 
+          (Just cty1, Nothing) =>
             lift $ union root1 root2 (Just cty1)
-          (Nothing, Just cty2) => 
+          (Nothing, Just cty2) =>
             lift $ union root1 root2 (Just cty2)
           (Just cty1, Just cty2) => do
-            unifyCTysImpl cty1 cty2 
+            unifyCTysImpl cty1 cty2
             lift $ union root1 root2 (Just cty1)
-  
+
   unifyUVarTyWithCtyImpl
      : Monad m
     => Node
@@ -157,23 +161,23 @@ mutual
       Nothing => do
         occursCheckImpl root1 cty2
         lift $ setValue root1 $ Just cty2
-      Just cty1 => 
+      Just cty1 =>
         unifyCTysImpl cty1 cty2
-  
+
   unifyPTysImpl
      : Monad m
     => PTy
     -> PTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
-  unifyPTysImpl (UVarTy node1) (UVarTy node2) = 
+  unifyPTysImpl (UVarTy node1) (UVarTy node2) =
     unifyUVarTysImpl node1 node2
-  unifyPTysImpl (UVarTy node) (Ctor cty) = 
+  unifyPTysImpl (UVarTy node) (Ctor cty) =
     unifyUVarTyWithCtyImpl node cty
-  unifyPTysImpl (Ctor cty) (UVarTy node) = 
+  unifyPTysImpl (Ctor cty) (UVarTy node) =
     unifyUVarTyWithCtyImpl node cty
-  unifyPTysImpl (Ctor cty1) (Ctor cty2) = 
+  unifyPTysImpl (Ctor cty1) (Ctor cty2) =
     unifyCTysImpl cty1 cty2
-  
+
   unifyCTysImpl
      : Monad m
     => CTy
@@ -207,9 +211,9 @@ unifyPTys pty1 pty2 = MkUnifyTyT $ do
 
 public export
 showUnifyTyError : UnifyTyError -> String
-showUnifyTyError (OccursCheckFailed node pty) = 
+showUnifyTyError (OccursCheckFailed node pty) =
   "Occurs check failed: Node " ++ showPrec App node ++ " occurs in " ++ showPrec App pty
-showUnifyTyError (TypeMismatch cty1 cty2) = 
+showUnifyTyError (TypeMismatch cty1 cty2) =
   "Type mismatch: Cannot unify " ++ showPrec App cty1 ++ " with " ++ showPrec App cty2
 
 ----------------------------------------
