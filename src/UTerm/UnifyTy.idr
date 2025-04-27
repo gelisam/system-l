@@ -16,7 +16,7 @@ import Util.ExceptT
 
 public export
 data UnifyTyError
-  = OccursCheckFailed Root CTy
+  = OccursCheckFailed (Root CTy) CTy
   | TypeMismatch CTy CTy
 
 public export
@@ -79,7 +79,7 @@ newUVarTy = MkUnifyTyT $ do
 
 occursCheckImpl
    : Monad m
-  => Node
+  => Node CTy
   -> CTy
   -> ExceptT UnifyTyError (UnionFindT CTy m) ()
 occursCheckImpl needleNode cty = do
@@ -90,7 +90,7 @@ occursCheckImpl needleNode cty = do
     else pure ()
   where
     rootOccursInPTy
-       : Root
+       : Root CTy
       -> PTy
       -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
     rootOccursInPTy needleRoot pty = do
@@ -128,8 +128,8 @@ zonk pty = MkUnifyTyT $ do
 mutual
   unifyUVarTysImpl
      : Monad m
-    => Node
-    -> Node
+    => Node CTy
+    -> Node CTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
   unifyUVarTysImpl node1 node2 = do
     root1 <- lift $ findRoot node1
@@ -152,7 +152,7 @@ mutual
 
   unifyUVarTyWithCtyImpl
      : Monad m
-    => Node
+    => Node CTy
     -> CTy
     -> ExceptT UnifyTyError (UnionFindT CTy m) ()
   unifyUVarTyWithCtyImpl node1 cty2 = do
@@ -211,8 +211,8 @@ unifyPTys pty1 pty2 = MkUnifyTyT $ do
 
 public export
 showUnifyTyError : UnifyTyError -> String
-showUnifyTyError (OccursCheckFailed node pty) =
-  "Occurs check failed: Node " ++ showPrec App node ++ " occurs in " ++ showPrec App pty
+showUnifyTyError (OccursCheckFailed (MkNode i) pty) =
+  "Occurs check failed: Node ?" ++ show i ++ " occurs in " ++ showPrec App pty
 showUnifyTyError (TypeMismatch cty1 cty2) =
   "Type mismatch: Cannot unify " ++ showPrec App cty1 ++ " with " ++ showPrec App cty2
 
@@ -220,9 +220,9 @@ showUnifyTyError (TypeMismatch cty1 cty2) =
 
 public export
 implementation Show UnifyTyError where
-  showPrec p (OccursCheckFailed node pty)
+  showPrec p (OccursCheckFailed (MkNode i) pty)
     = showParens (p /= Open)
-    $ "OccursCheckFailed " ++ showPrec App node ++ " " ++ showPrec App pty
+    $ "OccursCheckFailed (MkNode " ++ show i ++ ") " ++ showPrec App pty
   showPrec p (TypeMismatch cty1 cty2)
     = showParens (p /= Open)
     $ "TypeMismatch " ++ showPrec App cty1 ++ " " ++ showPrec App cty2
@@ -258,9 +258,9 @@ public export
 test1 : IO ()
 test1 = printLn ( runUnifyTyWithoutGeneralizing example1
                == ( Right
-                  $ PImp (UVarTy 0)
-                  $ PImp (UVarTy 0)
-                  $ PImp (UVarTy 0) (UVarTy 3)
+                  $ PImp (UVarTy (MkNode 0))
+                  $ PImp (UVarTy (MkNode 0))
+                  $ PImp (UVarTy (MkNode 0)) (UVarTy (MkNode 3))
                   )
                 )
 
@@ -276,8 +276,8 @@ test2 : IO ()
 test2 = printLn ( runUnifyTyWithoutGeneralizing example2
                == ( Left
                   $ TypeMismatch
-                      (ImpF (UVarTy 0) (UVarTy 1))
-                      (ParF (UVarTy 1) (UVarTy 2))
+                      (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+                      (ParF (UVarTy (MkNode 1)) (UVarTy (MkNode 2)))
                   )
                 )
 
@@ -292,8 +292,8 @@ test3 : IO ()
 test3 = printLn ( runUnifyTyWithoutGeneralizing example3
                == ( Left
                   $ OccursCheckFailed
-                      0
-                      (ImpF (UVarTy 0) (UVarTy 1))
+                      (MkNode 0)
+                      (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
                   )
                 )
 

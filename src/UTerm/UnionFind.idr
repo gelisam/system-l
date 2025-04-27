@@ -12,28 +12,43 @@ import Util.Map
 -- A `Node` points to a value of type `Maybe v`. If it has been unioned with
 -- other Nodes, all the nodes in the set point to the same `Maybe v`.
 public export
-Node : Type
-Node = Nat
+record Node (v : Type) where
+  constructor MkNode
+  unNode : Nat
 
 -- A representative of the set. Which Node is the Root may change after a union
 -- operation.
 public export
-Root : Type
+Root : Type -> Type
 Root = Node
+
+----------------------------------------
+
+public export
+implementation Eq (Node v) where
+  MkNode n1 == MkNode n2
+    = n1 == n2
+
+public export
+implementation Ord (Node v) where
+  MkNode n1 < MkNode n2
+    = n1 < n2
+
+----------------------------------------
 
 -- The internal state of the UnionFind monad.
 record S v where
   constructor MkS
   -- For 'newNode'.
-  nextNode : Node
+  nextNode : Node v
   -- Following the chain of parents always leads to a Root, which does not have
   -- a parent.
-  parents : Map Node Node
+  parents : Map (Node v) (Node v)
   -- Missing keys map to 'Nothing'.
-  values : Map Root v
+  values : Map (Root v) v
   -- The approximate worst-case number of parent-to-parent hops needed for a
   -- Node to reach this Root. Missing keys map to 0.
-  ranks : Map Root Nat
+  ranks : Map (Root v) Nat
 
 -- Wrapped in a State monad for easier manipulation.
 public export
@@ -47,36 +62,40 @@ UnionFind v = UnionFindT v Identity
 
 public export
 runUnionFindT : Monad m => UnionFindT v m a -> m a
-runUnionFindT (MkUnionFindT body) = evalStateT (MkS 0 empty empty empty) body
+runUnionFindT (MkUnionFindT body)
+  = evalStateT (MkS (MkNode 0) empty empty empty) body
 
 public export
 runUnionFind : UnionFind v a -> a
 runUnionFind = runIdentity . runUnionFindT
 
 public export
-newNode : Monad m => Maybe v -> UnionFindT v m Node
+newNode : Monad m => Maybe v -> UnionFindT v m (Node v)
 newNode maybeV = MkUnionFindT $ do
-  MkS newNode parents values ranks <- get
+  MkS (MkNode i) parents values ranks <- get
+  let thisNode, nextNode : Node v
+      thisNode = MkNode i
+      nextNode = MkNode (i + 1)
   let values' = case maybeV of
                   Just v
-                    => insert newNode v values
+                    => insert thisNode v values
                   Nothing
                     => values
-  put $ MkS (newNode + 1) parents values' ranks
-  pure newNode
+  put $ MkS nextNode parents values' ranks
+  pure thisNode
 
 findParentImpl
    : Monad m
-  => Node
-  -> StateT (S v) m (Maybe Node)
+  => Node v
+  -> StateT (S v) m (Maybe (Node v))
 findParentImpl node = do
   MkS _ parents _ _ <- get
   pure $ lookup node parents
 
 setParentImpl
    : Monad m
-  => Node
-  -> Root
+  => Node v
+  -> Root v
   -> StateT (S v) m ()
 setParentImpl node parent = do
   MkS nextNode parents values ranks <- get
@@ -85,8 +104,8 @@ setParentImpl node parent = do
 
 findRootImpl
    : Monad m
-  => Node
-  -> StateT (S v) m Node
+  => Node v
+  -> StateT (S v) m (Node v)
 findRootImpl node = do
   findParentImpl node >>= \case
     Nothing => do
@@ -100,19 +119,19 @@ findRootImpl node = do
       pure root
 
 public export
-findRoot : Monad m => Node -> UnionFindT v m Node
+findRoot : Monad m => Node v -> UnionFindT v m (Node v)
 findRoot node = MkUnionFindT $ do
   findRootImpl node
 
 public export
-getValue : Monad m => Node -> UnionFindT v m (Maybe v)
+getValue : Monad m => Node v -> UnionFindT v m (Maybe v)
 getValue node = MkUnionFindT $ do
   root <- findRootImpl node
   MkS _ _ values _ <- get
   pure $ lookup root values
 
 public export
-setValue : Monad m => Node -> Maybe v -> UnionFindT v m ()
+setValue : Monad m => Node v -> Maybe v -> UnionFindT v m ()
 setValue node maybeV = MkUnionFindT $ do
   root <- findRootImpl node
   MkS nextNode parents values ranks <- get
@@ -129,7 +148,7 @@ setValue node maybeV = MkUnionFindT $ do
 -- `Maybe v -> Maybe v -> Maybe v`, because that would prevent the caller from
 -- using side-effects to calculate this function.
 public export
-union : Monad m => Node -> Node -> Maybe v -> UnionFindT v m ()
+union : Monad m => Node v -> Node v -> Maybe v -> UnionFindT v m ()
 union node1 node2 maybeV = MkUnionFindT $ do
   root1 <- findRootImpl node1
   root2 <- findRootImpl node2
@@ -198,7 +217,9 @@ example1 = do
   -- Maybe. For unification, this works out because we do want to use Nothing to
   -- represent the case in which we don't know anything about the type
   -- represented by the unification variable.
-  let nodeF = nodeE + 1
+  let nodeF = case nodeE of
+        MkNode i
+          => MkNode (i + 1)
 
   union nodeA nodeB (Just "ab")
   union nodeB nodeC (Just "abc")

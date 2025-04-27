@@ -30,7 +30,7 @@ mutual
   -- Partial Type, meaning that part of the type can be a UVarTy
   public export
   data PTy : Type where
-    UVarTy : Node -> PTy
+    UVarTy : Node CTy -> PTy
     Ctor : CTy -> PTy
 
   -- Constructor-headed partial Type
@@ -84,8 +84,8 @@ tyToCTy (MkTy tyf)
 
 public export
 implementation Show PTy where
-  showPrec p (UVarTy node)
-    = "?" ++ show node
+  showPrec p (UVarTy (MkNode i))
+    = "?" ++ show i
   showPrec p (Ctor (ImpF a b))
     = showParens (p /= Open)
     $ "Imp " ++ showPrec App a ++ " " ++ showPrec App b
