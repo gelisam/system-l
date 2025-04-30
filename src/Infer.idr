@@ -25,10 +25,13 @@ data InferError
   | VariableNotProduced String
   | UnifyTyError UnifyTyError
 
+Impl : (Type -> Type) -> Type -> Type
+Impl m = ExceptT InferError (UnifyTyT m)
+
 public export
 record InferT (m : Type -> Type) (a : Type) where
   constructor MkInferT
-  unInferT : ExceptT InferError (UnifyTyT m) a
+  unInferT : Impl m a
 
 public export
 Infer : Type -> Type
@@ -93,7 +96,7 @@ public export
 implementation Monad m => MonadUnifyTy (InferT m) where
   liftUnifyTy body = MkInferT (go body)
     where
-      go : UnifyTy a -> ExceptT InferError (UnifyTyT m) a
+      go : UnifyTy a -> Impl m a
       go body = do
         let body' : UnifyTyT m a
             body' = liftUnifyTy body
@@ -348,7 +351,7 @@ public export
 implementation Monad m => MonadInfer (InferT m) where
   liftInfer body = MkInferT $ go body
     where
-      go : Infer a -> ExceptT InferError (UnifyTyT m) a
+      go : Infer a -> Impl m a
       go body = do
         let body' : UnifyTyT m (Either InferError a)
             body' = liftUnifyTy $ runExceptT $ unInferT body

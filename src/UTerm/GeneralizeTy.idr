@@ -25,10 +25,13 @@ public export
 PolyContext : Type
 PolyContext = List (String, PolyTy)
 
+Impl : Type -> Type
+Impl = StateT (Map (Node CTy) Nat) UnifyTy
+
 public export
 record GeneralizeTy a where
   constructor MkGeneralizeTy
-  unGeneralizeTy : StateT (Map (Node CTy) Nat) UnifyTy a
+  unGeneralizeTy : Impl a
 
 -- This language does not have let-generalization, so we can simply replace all
 -- the unification variables with quantified variables.
@@ -80,7 +83,7 @@ implementation Monad GeneralizeTy where
 
 generalizeZonkedImpl
    : PTy
-  -> StateT (Map (Node CTy) Nat) UnifyTy PolyTy
+  -> Impl PolyTy
 generalizeZonkedImpl (UVarTy node) = do
   nodeToQVar <- get
   case lookup node nodeToQVar of

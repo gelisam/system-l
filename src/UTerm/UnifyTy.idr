@@ -19,10 +19,13 @@ data UnifyTyError
   = OccursCheckFailed (Root CTy) CTy
   | TypeMismatch CTy CTy
 
+Impl : (Type -> Type) -> Type -> Type
+Impl m = ExceptT UnifyTyError (UnionFindT CTy m)
+
 public export
 record UnifyTyT (m : Type -> Type) (a : Type) where
   constructor MkUnifyTyT
-  unUnifyTyT : ExceptT UnifyTyError (UnionFindT CTy m) a
+  unUnifyTyT : Impl m a
 
 public export
 UnifyTy : Type -> Type
@@ -81,7 +84,7 @@ occursCheckImpl
    : Monad m
   => Node CTy
   -> CTy
-  -> ExceptT UnifyTyError (UnionFindT CTy m) ()
+  -> Impl m ()
 occursCheckImpl needleNode cty = do
   root <- lift $ findRoot needleNode
   bools <- traverse (rootOccursInPTy root) cty
@@ -92,9 +95,9 @@ occursCheckImpl needleNode cty = do
     rootOccursInPTy
        : Root CTy
       -> PTy
-      -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
+      -> Impl m Bool
     rootOccursInPTy needleRoot pty = do
-      let go : PTy -> ExceptT UnifyTyError (UnionFindT CTy m) Bool
+      let go : PTy -> Impl m Bool
           go (UVarTy node) = do
             root <- lift $ findRoot node
             pure (root == needleRoot)
@@ -107,7 +110,7 @@ public export
 zonkImpl
    : Monad m
   => PTy
-  -> ExceptT UnifyTyError (UnionFindT CTy m) PTy
+  -> Impl m PTy
 zonkImpl (UVarTy node) = do
   root <- lift $ findRoot node
   (lift $ getValue root) >>= \case
@@ -130,7 +133,7 @@ mutual
      : Monad m
     => Node CTy
     -> Node CTy
-    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
+    -> Impl m ()
   unifyUVarTysImpl node1 node2 = do
     root1 <- lift $ findRoot node1
     root2 <- lift $ findRoot node2
@@ -154,7 +157,7 @@ mutual
      : Monad m
     => Node CTy
     -> CTy
-    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
+    -> Impl m ()
   unifyUVarTyWithCtyImpl node1 cty2 = do
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
@@ -168,7 +171,7 @@ mutual
      : Monad m
     => PTy
     -> PTy
-    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
+    -> Impl m ()
   unifyPTysImpl (UVarTy node1) (UVarTy node2) =
     unifyUVarTysImpl node1 node2
   unifyPTysImpl (UVarTy node) (Ctor cty) =
@@ -182,7 +185,7 @@ mutual
      : Monad m
     => CTy
     -> CTy
-    -> ExceptT UnifyTyError (UnionFindT CTy m) ()
+    -> Impl m ()
   unifyCTysImpl (ImpF a1 b1) (ImpF a2 b2) = do
     unifyPTysImpl a1 a2
     unifyPTysImpl b1 b2
@@ -307,7 +310,7 @@ public export
 implementation Monad m => MonadUnifyTy (UnifyTyT m) where
   liftUnifyTy body = MkUnifyTyT $ go body
     where
-      go : UnifyTy a -> ExceptT UnifyTyError (UnionFindT CTy m) a
+      go : UnifyTy a -> Impl m a
       go body = do
         let body' : UnionFindT CTy m (Either UnifyTyError a)
             body' = liftUnionFind $ runExceptT $ unUnifyTyT body
