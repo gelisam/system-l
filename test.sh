@@ -2,20 +2,23 @@
 set -e
 
 clear
-for FILE in $(find src -name '*.idr'); do
+
+if [ -f "$1" ]; then
   idris2 \
     --source-dir src \
     --output-dir build \
-    --check "$FILE"
-done
+    --check "$1"
+else
+  for FILE in $(find src -name '*.idr'); do
+    idris2 \
+      --source-dir src \
+      --output-dir build \
+      --check "$FILE"
+  done
+fi
 
 idris2 \
   --source-dir src \
   --output-dir build \
   -o runtests src/main.idr
 ./build/runtests
-
-#idris2 \
-#  --source-dir src \
-#  --output-dir build \
-#  --check "src/Util/Map.idr"
