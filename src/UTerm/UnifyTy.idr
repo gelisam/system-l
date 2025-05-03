@@ -252,11 +252,14 @@ example1 = do
   unifyPTys (PImp uvar1 uvar2) (PImp uvar2 uvar3)
   zonk $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
 
--- The algorithm doesn't guarantee which variable is chosen as the root, so what I really want to test is that there are two distinct nodes n1 and n2 such that the result is
+-- The algorithm doesn't guarantee which variable is chosen as the root, so what
+-- I really want to test is that there are two distinct nodes n1 and n2 such
+-- that the result is
 --
 --   Right $ PImp n1 $ PImp n1 $ PImp n1 n2
 --
--- But it is much easier to just inspect the result and use the roots 0 and 3 which happen to be chosen by the algorithm and use that as the test case.
+-- But it is much easier to just inspect the result and use the roots 0 and 3
+-- which happen to be chosen by the algorithm and use that as the test case.
 public export
 test1 : IO ()
 test1 = printLn ( runUnifyTyWithoutGeneralizing example1
