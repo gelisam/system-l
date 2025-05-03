@@ -110,11 +110,11 @@ unifyUVarExtensibles node1 node2 = MkUnifyExtensibleT $ do
   union node1 node2 $ fromExtensible (extensible1 && extensible2)
 
 public export
-isExtensible
+getIsExtensible
    : Monad m
   => UVarExtensible
   -> UnifyExtensibleT m Bool
-isExtensible node = MkUnifyExtensibleT $ do
+getIsExtensible node = MkUnifyExtensibleT $ do
   toExtensible <$> getValue node
 
 ----------------------------------------
@@ -128,10 +128,10 @@ example1 = do
   unifyUVarExtensibles uvar1 uvar2
   unifyUVarExtensibles uvar2 uvar3
   unifyUVarExtensibles uvar3 nonExtensibleUVar
-  extensible1 <- isExtensible uvar1
-  extensible2 <- isExtensible uvar2
-  extensible3 <- isExtensible uvar3
-  extensible4 <- isExtensible uvar4
+  extensible1 <- getIsExtensible uvar1
+  extensible2 <- getIsExtensible uvar2
+  extensible3 <- getIsExtensible uvar3
+  extensible4 <- getIsExtensible uvar4
   pure (extensible1, extensible2, extensible3, extensible4)
 
 public export
