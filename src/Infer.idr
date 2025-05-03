@@ -90,7 +90,7 @@ implementation MonadTrans InferT where
   lift = MkInferT . lift . lift
 
 -- Note that InferT discharges the MonadUnifyTy constraint, it does _not_
--- delegate to the m. Being able to unify type variables in an important part of
+-- delegate to the m. Being able to unify type variables is an important part of
 -- InferT's API.
 public export
 implementation Monad m => MonadUnifyTy (InferT m) where
