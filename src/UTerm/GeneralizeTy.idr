@@ -101,7 +101,7 @@ generalizeZonkedImpl (Ctor cty) = do
 public export
 generalizeType : PTy -> GeneralizeTy PolyTy
 generalizeType pty = MkGeneralizeTy $ do
-  zonked <- lift $ zonk pty
+  zonked <- lift $ zonkPTy pty
   generalizeZonkedImpl zonked
 
 public export

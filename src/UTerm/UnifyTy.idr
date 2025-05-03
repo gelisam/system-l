@@ -124,8 +124,8 @@ zonkImpl (Ctor cty) = do
   pure $ Ctor cty'
 
 public export
-zonk : Monad m => PTy -> UnifyTyT m PTy
-zonk pty = MkUnifyTyT $ do
+zonkPTy : Monad m => PTy -> UnifyTyT m PTy
+zonkPTy pty = MkUnifyTyT $ do
   zonkImpl pty
 
 mutual
@@ -250,7 +250,7 @@ example1 = do
   uvar3 <- newUVarTy
   uvar4 <- newUVarTy
   unifyPTys (PImp uvar1 uvar2) (PImp uvar2 uvar3)
-  zonk $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
+  zonkPTy $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
 
 -- The algorithm doesn't guarantee which variable is chosen as the root, so what
 -- I really want to test is that there are two distinct nodes n1 and n2 such
