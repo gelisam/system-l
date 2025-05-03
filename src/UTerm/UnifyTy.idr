@@ -171,7 +171,7 @@ mutual
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
       Nothing => do
-        --occursCheckImpl root1 cty2
+        occursCheckImpl root1 cty2
         lift $ setValue root1 $ Just cty2
       Just cty1 =>
         unifyCTysImpl cty1 cty2
@@ -284,6 +284,7 @@ example2 = do
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
   uvar3 <- newUVarTy
+
   unifyPTys (PImp uvar1 uvar2) (PPar uvar2 uvar3)
 
 public export
@@ -300,7 +301,9 @@ example3 : UnifyTy (PTy, PTy)
 example3 = do
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
+
   unifyPTys uvar1 (PImp uvar1 uvar2)
+
   pty1 <- zonkDepthPTy 3 uvar1
   pty2 <- zonkDepthPTy 3 uvar2
   pure (pty1, pty2)
@@ -309,11 +312,11 @@ example3 = do
 public export
 test3 : IO ()
 test3 = printLn ( runUnifyTyWithoutGeneralizing example3
-               --== ( Left
-               --   $ OccursCheckFailed
-               --       (MkNode 0)
-               --       (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
-               --   )
+               == ( Left
+                  $ OccursCheckFailed
+                      (MkNode 0)
+                      (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+                  )
                 )
 
 ----------------------------------------
