@@ -36,6 +36,7 @@ main = do
   putStr "UnifyTy.test1:         "; UnifyTy.test1
   putStr "UnifyTy.test2:         "; UnifyTy.test2
   putStr "UnifyTy.test3:         "; UnifyTy.test3
+  putStr "UnifyTy.test4:         "; UnifyTy.test4
   putStr "GeneralizeTy.test1:    "; GeneralizeTy.test1
   putStr "Examples.test1:        "; Examples.test1
   putStrLn "*** tests pass if no False is shown above ***"

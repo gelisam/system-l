@@ -319,6 +319,32 @@ test3 = printLn ( runUnifyTyWithoutGeneralizing example3
                   )
                 )
 
+
+example4 : UnifyTy (PTy, PTy, PTy)
+example4 = do
+  uvar1 <- newUVarTy
+  uvar2 <- newUVarTy
+  uvar3 <- newUVarTy
+
+  unifyPTys (PImp uvar1 uvar2) uvar3
+  unifyPTys uvar1 uvar3
+
+  pty1 <- zonkDepthPTy 3 uvar1
+  pty2 <- zonkDepthPTy 3 uvar2
+  pty3 <- zonkDepthPTy 3 uvar3
+  pure (pty1, pty2, pty3)
+
+
+public export
+test4 : IO ()
+test4 = printLn ( runUnifyTyWithoutGeneralizing example4
+               --== ( Left
+               --   $ OccursCheckFailed
+               --       (MkNode 0)
+               --       (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+               --   )
+                )
+
 ----------------------------------------
 
 public export
