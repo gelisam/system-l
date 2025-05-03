@@ -10,6 +10,7 @@ import Control.Monad.State
 import Ty
 import UTerm.PTy
 import UTerm.UnionFind
+import Util.Depth
 import Util.ExceptT
 
 ----------------------------------------
@@ -109,24 +110,32 @@ occursCheckImpl needleNode cty = do
 public export
 zonkImpl
    : Monad m
-  => PTy
+  => Depth
+  -> PTy
   -> Impl m PTy
-zonkImpl (UVarTy node) = do
+zonkImpl (Finite Z) pty = do
+  pure pty
+zonkImpl depth (UVarTy node) = do
   root <- lift $ findRoot node
   (lift $ getValue root) >>= \case
     Nothing =>
       pure $ UVarTy root
     Just cty => do
-      cty' <- traverse zonkImpl cty
+      cty' <- traverse (zonkImpl (decrDepth depth)) cty
       pure $ Ctor cty'
-zonkImpl (Ctor cty) = do
-  cty' <- traverse zonkImpl cty
+zonkImpl depth (Ctor cty) = do
+  cty' <- traverse (zonkImpl (decrDepth depth)) cty
   pure $ Ctor cty'
 
 public export
 zonkPTy : Monad m => PTy -> UnifyTyT m PTy
 zonkPTy pty = MkUnifyTyT $ do
-  zonkImpl pty
+  zonkImpl Infinite pty
+
+public export
+zonkDepthPTy : Monad m => Nat -> PTy -> UnifyTyT m PTy
+zonkDepthPTy depth pty = MkUnifyTyT $ do
+  zonkImpl (Finite depth) pty
 
 mutual
   unifyUVarTysImpl
@@ -162,7 +171,7 @@ mutual
     root1 <- lift $ findRoot node1
     (lift $ getValue root1) >>= \case
       Nothing => do
-        occursCheckImpl root1 cty2
+        --occursCheckImpl root1 cty2
         lift $ setValue root1 $ Just cty2
       Just cty1 =>
         unifyCTysImpl cty1 cty2
@@ -287,20 +296,24 @@ test2 = printLn ( runUnifyTyWithoutGeneralizing example2
                   )
                 )
 
-example3 : UnifyTy ()
+example3 : UnifyTy (PTy, PTy)
 example3 = do
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
   unifyPTys uvar1 (PImp uvar1 uvar2)
+  pty1 <- zonkDepthPTy 3 uvar1
+  pty2 <- zonkDepthPTy 3 uvar2
+  pure (pty1, pty2)
+
 
 public export
 test3 : IO ()
 test3 = printLn ( runUnifyTyWithoutGeneralizing example3
-               == ( Left
-                  $ OccursCheckFailed
-                      (MkNode 0)
-                      (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
-                  )
+               --== ( Left
+               --   $ OccursCheckFailed
+               --       (MkNode 0)
+               --       (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+               --   )
                 )
 
 ----------------------------------------
