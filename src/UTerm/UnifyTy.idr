@@ -152,11 +152,13 @@ mutual
         maybeV1 <- lift $ getValue root1
         maybeV2 <- lift $ getValue root2
         case (maybeV1, maybeV2) of
-          (Nothing, Nothing) =>
+          (Nothing, Nothing) => do
             lift $ union root1 root2 Nothing
-          (Just cty1, Nothing) =>
+          (Just cty1, Nothing) => do
+            occursCheckImpl root2 cty1
             lift $ union root1 root2 (Just cty1)
-          (Nothing, Just cty2) =>
+          (Nothing, Just cty2) => do
+            occursCheckImpl root1 cty2
             lift $ union root1 root2 (Just cty2)
           (Just cty1, Just cty2) => do
             unifyCTysImpl cty1 cty2
@@ -338,11 +340,11 @@ example4 = do
 public export
 test4 : IO ()
 test4 = printLn ( runUnifyTyWithoutGeneralizing example4
-               --== ( Left
-               --   $ OccursCheckFailed
-               --       (MkNode 0)
-               --       (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
-               --   )
+               == ( Left
+                  $ OccursCheckFailed
+                      (MkNode 0)
+                      (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+                  )
                 )
 
 ----------------------------------------
