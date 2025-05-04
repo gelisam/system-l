@@ -401,3 +401,7 @@ implementation MonadUnifyTy m => MonadUnifyTy (StateT s m) where
 public export
 implementation MonadUnifyTy m => MonadUnifyTy (ExceptT e m) where
   liftUnifyTy = lift . liftUnifyTy
+
+public export
+implementation MonadUnifyTy m => MonadUnifyTy (UnionFindT v m) where
+  liftUnifyTy = lift . liftUnifyTy

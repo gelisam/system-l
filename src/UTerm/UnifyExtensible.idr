@@ -9,6 +9,7 @@ module UTerm.UnifyExtensible
 import Control.Monad.State
 
 import Ty
+import UTerm.UnifyTy
 import UTerm.UnionFind as UnionFind
 import Util.ExceptT
 
@@ -87,6 +88,10 @@ public export
 implementation MonadUnionFind v m => MonadUnionFind v (UnifyExtensibleT m) where
   liftUnionFind = lift . liftUnionFind
 
+public export
+implementation MonadUnifyTy m => MonadUnifyTy (UnifyExtensibleT m) where
+  liftUnifyTy = lift . liftUnifyTy
+
 -----------------------------------------
 
 public export
@@ -164,4 +169,8 @@ implementation MonadUnifyExtensible m => MonadUnifyExtensible (StateT s m) where
 
 public export
 implementation MonadUnifyExtensible m => MonadUnifyExtensible (ExceptT e m) where
+  liftUnifyExtensible = lift . liftUnifyExtensible
+
+public export
+implementation MonadUnifyExtensible m => MonadUnifyExtensible (UnionFindT v m) where
   liftUnifyExtensible = lift . liftUnifyExtensible
