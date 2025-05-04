@@ -161,6 +161,8 @@ mutual
             occursCheckImpl root1 cty2
             lift $ union root1 root2 (Just cty2)
           (Just cty1, Just cty2) => do
+            occursCheckImpl root1 cty2
+            occursCheckImpl root2 cty1
             unifyCTysImpl cty1 cty2
             lift $ union root1 root2 (Just cty1)
 
@@ -344,6 +346,31 @@ test4 = printLn ( runUnifyTyWithoutGeneralizing example4
                   $ OccursCheckFailed
                       (MkNode 0)
                       (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+                  )
+                )
+
+example5 : UnifyTy (PTy, PTy)
+example5 = do
+  uvar1 <- newUVarTy
+  uvar2 <- newUVarTy
+  uvar3 <- newUVarTy
+
+  unifyPTys uvar1 (PImp uvar2 uvar3)
+  unifyPTys uvar2 (PImp uvar1 uvar3)
+  unifyPTys uvar1 uvar2
+
+  pty1 <- zonkDepthPTy 3 uvar1
+  pty2 <- zonkDepthPTy 3 uvar2
+  pure (pty1, pty2)
+
+
+public export
+test5 : IO ()
+test5 = printLn ( runUnifyTyWithoutGeneralizing example5
+               == ( Left
+                  $ OccursCheckFailed
+                      (MkNode 0)
+                      (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 2)))
                   )
                 )
 
