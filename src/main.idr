@@ -21,7 +21,8 @@ import Examples
 --                     )
 --                   )
 --
--- It should print True if the test passes. If it prints False, it is easy to
+-- It should print True if the test passes. I don't check that all the functions
+-- return True, I just print True. This way, if it prints False, it is easy to
 -- edit the above into the following in order to investigate what's wrong.
 --
 --   test1 : IO ()
