@@ -122,6 +122,14 @@ getIsExtensible
 getIsExtensible node = MkUnifyExtensibleT $ do
   toExtensible <$> getValue node
 
+public export
+setNonExtensible
+   : Monad m
+  => UVarExtensible
+  -> UnifyExtensibleT m ()
+setNonExtensible node = do
+  unifyUVarExtensibles node nonExtensibleUVar
+
 ----------------------------------------
 
 example1 : UnifyExtensible (Bool, Bool, Bool, Bool)
