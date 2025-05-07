@@ -83,3 +83,18 @@ intersection v1s v2s f
         => Nothing
       (Both v1 v2)
         => Just (f v1 v2)
+
+public export
+difference
+   : Ord k
+  => Map k v
+  -> Map k x
+  -> Map k v
+difference vs xs
+  = filterJust $ union vs xs $ \case
+      (This v)
+        => Just v
+      (That _)
+        => Nothing
+      (Both _ _)
+        => Nothing
