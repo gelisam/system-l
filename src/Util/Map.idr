@@ -1,4 +1,24 @@
 -- Extra functions for working with SortedMap.
+--
+-- This set of functions can be composed into mapWithKey, unionWithKeyM, etc.,
+-- with the slight drawback that the key comes second.
+--
+-- > mapWithKey
+-- >    : Ord k
+-- >   => (v1 -> k -> v2)
+-- >   -> Map k v1
+-- >   -> Map k v2
+-- > mapWithKey f
+-- >   = withKey . map f
+--
+-- > unionWithKeyM
+-- >    : (Ord k, Monad m)
+-- >   => (These v1 v2 -> k -> m v3)
+-- >   -> Map k v1
+-- >   -> Map k v2
+-- >   -> m (Map k v3)
+-- > unionWithKeyM f v1s v2s
+-- >   = sequence $ withKey $ union v1s v2s f
 module Util.Map
 
 import Data.List as List
@@ -21,7 +41,6 @@ withKey
   = Map.fromList
   . map (\(k, f) => (k, f k))
   . Map.toList
-
 
 public export
 filterJust
