@@ -1,6 +1,5 @@
 import UTerm.GeneralizeTy
 import UTerm.UnifyCtx
-import UTerm.UnifyExtensible
 import UTerm.UnifyTy
 import UTerm.UnionFind
 import Examples
@@ -34,7 +33,6 @@ main : IO ()
 main = do
   putStrLn "typechecks."
   putStr "UnionFind.test1:       "; UnionFind.test1
-  putStr "UnifyExtensible.test1: "; UnifyExtensible.test1
   putStr "UnifyTy.test1:         "; UnifyTy.test1
   putStr "UnifyTy.test2:         "; UnifyTy.test2
   putStr "UnifyTy.test3:         "; UnifyTy.test3

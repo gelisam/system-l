@@ -7,7 +7,6 @@ import Data.SortedSet as Set
 import Ty
 import UTerm.PolyTy
 import UTerm.PTy
-import UTerm.UnifyExtensible
 import UTerm.UnifyTy
 import UTerm.UnionFind
 import Util.ExceptT
@@ -21,8 +20,8 @@ record PContext where
   constructor MkPContext
   varsSoFar
      : Map String PTy
-  moreVarsAllowed
-     : UVarExtensible
+  closed
+     : Bool
 
 public export
 UVarCtx : Type
@@ -34,7 +33,7 @@ data UnifyCtxError
   | UnifyTyError UnifyTyError
 
 Impl : (Type -> Type) -> Type -> Type
-Impl m = ExceptT UnifyCtxError (UnionFindT PContext (UnifyExtensibleT (UnifyTyT m)))
+Impl m = ExceptT UnifyCtxError (UnionFindT PContext (UnifyTyT m))
 
 public export
 record UnifyCtxT (m : Type -> Type) (a : Type) where
@@ -51,7 +50,7 @@ runUnifyCtxTWithoutGeneralizing
   => UnifyCtxT m a
   -> m (Either UnifyCtxError a)
 runUnifyCtxTWithoutGeneralizing (MkUnifyCtxT body) = do
-  (runUnifyTyTWithoutGeneralizing $ runUnifyExtensibleT $ runUnionFindT $ runExceptT body) >>= \case
+  (runUnifyTyTWithoutGeneralizing $ runUnionFindT $ runExceptT body) >>= \case
     Left unifyTyError => do
       pure $ Left $ UnifyTyError unifyTyError
     Right (Left unifyCtxError) => do
@@ -84,7 +83,7 @@ implementation Monad m => Monad (UnifyCtxT m) where
 
 public export
 implementation MonadTrans UnifyCtxT where
-  lift = MkUnifyCtxT . lift . lift . lift . lift
+  lift = MkUnifyCtxT . lift . lift . lift
 
 -- Note that UnifyCtxT discharges the MonadUnifyTy constraint, it does _not_
 -- delegate to the m. Being able to unify type variables is an important part of
@@ -97,43 +96,43 @@ implementation Monad m => MonadUnifyTy (UnifyCtxT m) where
       go body = do
         let body' : UnifyTyT m a
             body' = liftUnifyTy body
-        lift $ lift $ lift body'
+        lift $ lift body'
 
 -----------------------------------------
 
--- Could contain any number of variables.
+-- Creates a new open context (allows adding more variables).
 public export
 newUVarCtx : Monad m => UnifyCtxT m UVarCtx
 newUVarCtx = MkUnifyCtxT $ do
-  uvarExtensible <- liftUnifyExtensible newExtensibleUVar
   liftUnionFind $ newNode $ Just $ MkPContext
     { varsSoFar
         = Map.empty
-    , moreVarsAllowed
-        = uvarExtensible
+    , closed
+        = False
     }
 
--- Must contain at least the specified variables.
+-- Creates an open context with initial variables. 
+-- More variables can be added later.
 public export
-newExtensibleUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
-newExtensibleUVarCtx vars = MkUnifyCtxT $ do
-  uvarExtensible <- liftUnifyExtensible newExtensibleUVar
+newOpenUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
+newOpenUVarCtx vars = MkUnifyCtxT $ do
   liftUnionFind $ newNode $ Just $ MkPContext
     { varsSoFar
         = vars
-    , moreVarsAllowed
-        = uvarExtensible
+    , closed
+        = False
     }
 
--- Must contain exactly the specified variables.
+-- Creates a closed context with exactly the specified variables.
+-- No more variables can be added later.
 public export
-newNonExtensibleUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
-newNonExtensibleUVarCtx vars = MkUnifyCtxT $ do
+newClosedUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
+newClosedUVarCtx vars = MkUnifyCtxT $ do
   liftUnionFind $ newNode $ Just $ MkPContext
     { varsSoFar
         = vars
-    , moreVarsAllowed
-        = nonExtensibleUVar
+    , closed
+        = True
     }
 
 getPContextImpl
@@ -150,8 +149,8 @@ getPContextImpl node = do
       pure $ MkPContext
         { varsSoFar
             = Map.empty
-        , moreVarsAllowed
-            = nonExtensibleUVar
+        , closed
+            = True
         }
     Just pctx => do
       pure pctx
@@ -163,39 +162,40 @@ unifyUVarCtxs
   -> UVarCtx
   -> UnifyCtxT m ()
 unifyUVarCtxs uvarCtx1 uvarCtx2 = MkUnifyCtxT $ do
-  MkPContext varsSoFar1 moreVarsAllowed1 <- getPContextImpl uvarCtx1
-  MkPContext varsSoFar2 moreVarsAllowed2 <- getPContextImpl uvarCtx2
+  MkPContext varsSoFar1 closed1 <- getPContextImpl uvarCtx1
+  MkPContext varsSoFar2 closed2 <- getPContextImpl uvarCtx2
 
-  isExtensible1 <- liftUnifyExtensible $ getIsExtensible moreVarsAllowed1
-  isExtensible2 <- liftUnifyExtensible $ getIsExtensible moreVarsAllowed2
-  liftUnifyExtensible $ unifyUVarExtensibles moreVarsAllowed1 moreVarsAllowed2
-
+  -- When unifying contexts, we need to check if variables can be added to
+  -- closed contexts. A closed context (closed=True) cannot accept new variables,
+  -- while an open context (closed=False) can.
   varsSoFar3 <- sequence $ Map.withKey $ Map.union varsSoFar1 varsSoFar2 $ \case
     This pty1 => \x => do
       -- This variable from varsSoFar1 is being added to varsSoFar2, is that
       -- allowed?
-      case isExtensible2 of
-        False => do
-          throwE $ ContextCannotHaveVariable uvarCtx2 x
+      case closed2 of
         True => do
+          throwE $ ContextCannotHaveVariable uvarCtx2 x
+        False => do
           pure pty1
     That pty2 => \x => do
       -- This variable from varsSoFar2 is being added to varsSoFar1, is that
       -- allowed?
-      case isExtensible1 of
-        False => do
-          throwE $ ContextCannotHaveVariable uvarCtx1 x
+      case closed1 of
         True => do
+          throwE $ ContextCannotHaveVariable uvarCtx1 x
+        False => do
           pure pty2
     Both pty1 pty2 => \_ => do
       liftUnifyTy $ unifyPTys pty1 pty2
       pure pty1
   
+  -- If either context is closed, then their union cannot accept more variables,
+  -- as that would cause that closed context to accept more variables.
   liftUnionFind $ union uvarCtx1 uvarCtx2 $ Just $ MkPContext
     { varsSoFar
         = varsSoFar3
-    , moreVarsAllowed
-        = moreVarsAllowed1
+    , closed
+        = closed1 || closed2
     }
 
 public export
@@ -211,6 +211,20 @@ zonkDepthUVarCtx depth uvarCtx = MkUnifyCtxT $ do
   MkPContext varsSoFar_ _ <- getPContextImpl uvarCtx
   for varsSoFar_ $ \pty => do
     liftUnifyTy $ zonkDepthPTy depth pty
+
+-- Checks if a UVarCtx is closed.
+public export
+isClosedUVarCtx : Monad m => UVarCtx -> UnifyCtxT m Bool
+isClosedUVarCtx uvarCtx = MkUnifyCtxT $ do
+  MkPContext _ closed <- getPContextImpl uvarCtx
+  pure closed
+
+-- Checks if a UVarCtx is open.
+public export
+isOpenUVarCtx : Monad m => UVarCtx -> UnifyCtxT m Bool
+isOpenUVarCtx uvarCtx = MkUnifyCtxT $ do
+  MkPContext _ closed <- getPContextImpl uvarCtx
+  pure (not closed)
 
 ----------------------------------------
 
@@ -249,16 +263,16 @@ example1 = do
   uvarTy2 <- liftUnifyTy newUVarTy
   uvarTy3 <- liftUnifyTy newUVarTy
   uvarTy4 <- liftUnifyTy newUVarTy
-  uvarCtx1 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx1 <- newOpenUVarCtx $ Map.fromList
     [ ("x", PImp uvarTy1 uvarTy2)
     , ("y", uvarTy3)
     ]
   uvarCtx2 <- newUVarCtx
-  uvarCtx3 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx3 <- newOpenUVarCtx $ Map.fromList
     [ ("x", PImp uvarTy2 uvarTy3)
     , ("z", uvarTy4)
     ]
-  uvarCtx4 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx4 <- newOpenUVarCtx $ Map.fromList
     [ ("x", PTen uvarTy3 uvarTy4)
     , ("y", uvarTy3)
     , ("xyz", uvarTy4)
@@ -305,10 +319,10 @@ test1 = printLn ( runUnifyCtxWithoutGeneralizing example1
 example2 : UnifyCtx (Map String PTy, Map String PTy)
 example2 = do
   uvarTy <- liftUnifyTy newUVarTy
-  uvarCtx1 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx1 <- newOpenUVarCtx $ Map.fromList
     [ ("x", uvarTy)
     ]
-  uvarCtx2 <- newNonExtensibleUVarCtx $ Map.fromList
+  uvarCtx2 <- newClosedUVarCtx $ Map.fromList
     [ ("x", uvarTy)
     , ("y", uvarTy)
     ]
@@ -337,10 +351,10 @@ test2 = printLn ( runUnifyCtxWithoutGeneralizing example2
 example3 : UnifyCtx ()
 example3 = do
   uvarTy <- liftUnifyTy newUVarTy
-  uvarCtx1 <- newNonExtensibleUVarCtx $ Map.fromList
+  uvarCtx1 <- newClosedUVarCtx $ Map.fromList
     [ ("x", uvarTy)
     ]
-  uvarCtx2 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx2 <- newOpenUVarCtx $ Map.fromList
     [ ("x", uvarTy)
     , ("y", uvarTy)
     ]
@@ -361,11 +375,11 @@ example4 = do
   uvarTy2 <- liftUnifyTy newUVarTy
   uvarTy3 <- liftUnifyTy newUVarTy
   uvarTy4 <- liftUnifyTy newUVarTy
-  uvarCtx1 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx1 <- newOpenUVarCtx $ Map.fromList
     [ ("x", PImp uvarTy1 uvarTy2)
     , ("y", uvarTy4)
     ]
-  uvarCtx2 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx2 <- newOpenUVarCtx $ Map.fromList
     [ ("x", uvarTy4)
     , ("y", PPar uvarTy2 uvarTy3)
     ]
@@ -388,11 +402,11 @@ example5 = do
   uvarTy1 <- liftUnifyTy newUVarTy
   uvarTy2 <- liftUnifyTy newUVarTy
   uvarTy3 <- liftUnifyTy newUVarTy
-  uvarCtx1 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx1 <- newOpenUVarCtx $ Map.fromList
     [ ("x", PImp uvarTy1 uvarTy2)
     , ("y", uvarTy1)
     ]
-  uvarCtx2 <- newExtensibleUVarCtx $ Map.fromList
+  uvarCtx2 <- newOpenUVarCtx $ Map.fromList
     [ ("x", uvarTy3)
     , ("y", uvarTy3)
     ]
