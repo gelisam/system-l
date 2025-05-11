@@ -44,5 +44,7 @@ main = do
   putStr "UnifyCtx.test3:        "; UnifyCtx.test3
   putStr "UnifyCtx.test4:        "; UnifyCtx.test4
   putStr "UnifyCtx.test5:        "; UnifyCtx.test5
+  putStr "UnifyCtx.test6:        "; UnifyCtx.test6
+  putStr "UnifyCtx.test7:        "; UnifyCtx.test7
   putStr "Examples.test1:        "; Examples.test1
   putStrLn "*** tests pass if no False is shown above ***"

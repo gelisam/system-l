@@ -111,7 +111,7 @@ newUVarCtx = MkUnifyCtxT $ do
         = False
     }
 
--- Creates an open context with initial variables. 
+-- Creates an open context with initial variables.
 -- More variables can be added later.
 public export
 newOpenUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
@@ -188,7 +188,7 @@ unifyUVarCtxs uvarCtx1 uvarCtx2 = MkUnifyCtxT $ do
     Both pty1 pty2 => \_ => do
       liftUnifyTy $ unifyPTys pty1 pty2
       pure pty1
-  
+
   -- If either context is closed, then their union cannot accept more variables,
   -- as that would cause that closed context to accept more variables.
   liftUnionFind $ union uvarCtx1 uvarCtx2 $ Just $ MkPContext
@@ -425,6 +425,65 @@ test5 = printLn ( runUnifyCtxWithoutGeneralizing example5
                   $ OccursCheckFailed
                       (MkNode 0)
                       (ImpF (UVarTy (MkNode 0)) (UVarTy (MkNode 1)))
+                  )
+                )
+
+public export
+example6 : UnifyCtx Bool
+example6 = do
+  uvarTy <- liftUnifyTy newUVarTy
+  uvarCtx1 <- newOpenUVarCtx $ Map.fromList
+    [ ("x", uvarTy)
+    ]
+  uvarCtx2 <- newClosedUVarCtx $ Map.fromList
+    [ ("x", uvarTy)
+    ]
+
+  -- Unify an open context with a closed context
+  unifyUVarCtxs uvarCtx1 uvarCtx2
+
+  -- Check if the result is closed
+  isClosedUVarCtx uvarCtx1
+
+public export
+test6 : IO ()
+test6 = printLn ( runUnifyCtxWithoutGeneralizing example6
+               == Right True
+                )
+
+public export
+example7 : UnifyCtx ()
+example7 = do
+  uvarTy1 <- liftUnifyTy newUVarTy
+  uvarTy2 <- liftUnifyTy newUVarTy
+
+  -- Create an open context with one variable
+  uvarCtx1 <- newOpenUVarCtx $ Map.fromList
+    [ ("x", uvarTy1)
+    ]
+
+  -- Create a closed context with one variable
+  uvarCtx2 <- newClosedUVarCtx $ Map.fromList
+    [ ("x", uvarTy1)
+    ]
+
+  -- Unify the open context with the closed context
+  unifyUVarCtxs uvarCtx1 uvarCtx2
+
+  -- Now try to add a new variable "y" to the unified context
+  -- With the bug (closed1 && closed2), this would succeed incorrectly
+  -- With the fix (closed1 || closed2), this should fail
+  uvarCtx3 <- newOpenUVarCtx $ Map.fromList
+    [ ("y", uvarTy2)
+    ]
+
+  unifyUVarCtxs uvarCtx1 uvarCtx3
+
+public export
+test7 : IO ()
+test7 = printLn ( runUnifyCtxWithoutGeneralizing example7
+               == ( Left
+                  $ ContextCannotHaveVariable (MkNode 0) "y"
                   )
                 )
 
