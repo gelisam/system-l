@@ -65,7 +65,7 @@ runUnifyCtxWithoutGeneralizing
 runUnifyCtxWithoutGeneralizing
   = runIdentity . runUnifyCtxTWithoutGeneralizing
 
------------------------------------------
+----------------------------------------
 
 public export
 implementation Monad m => Functor (UnifyCtxT m) where
@@ -98,7 +98,7 @@ implementation Monad m => MonadUnifyTy (UnifyCtxT m) where
             body' = liftUnifyTy body
         lift $ lift body'
 
------------------------------------------
+----------------------------------------
 
 -- Creates a new open context (allows adding more variables).
 public export
@@ -155,6 +155,63 @@ getPContextImpl node = do
     Just pctx => do
       pure pctx
 
+insertImpl
+   : Monad m
+  => UVarCtx
+  -> String
+  -> PTy
+  -> Impl m ()
+insertImpl uvarCtx x pty = do
+  MkPContext varsSoFar closed <- getPContextImpl uvarCtx
+
+  case Map.lookup x varsSoFar of
+    Just existingPty => do
+      -- Variable already present; unify the old and new types
+      liftUnifyTy $ unifyPTys existingPty pty
+    Nothing => do
+      -- Can't add new variable if the context is closed
+      when closed $ do
+        throwE $ ContextCannotHaveVariable uvarCtx x
+
+      -- We can add the new variable
+      liftUnionFind $ setValue uvarCtx $ Just $ MkPContext
+        { varsSoFar = Map.insert x pty varsSoFar
+        , closed = closed
+        }
+
+-- Similar to Map.insert. Fails if the context is closed.
+public export
+insert
+   : Monad m
+  => UVarCtx
+  -> String
+  -> PTy
+  -> UnifyCtxT m ()
+insert uvarCtx x pty = MkUnifyCtxT $ do
+  insertImpl uvarCtx x pty
+
+closeImpl
+   : Monad m
+  => UVarCtx
+  -> Impl m ()
+closeImpl uvarCtx = do
+  MkPContext varsSoFar _ <- getPContextImpl uvarCtx
+
+  -- Set closed flag to True
+  liftUnionFind $ setValue uvarCtx $ Just $ MkPContext
+    { varsSoFar = varsSoFar
+    , closed = True
+    }
+
+-- Closes a context, preventing further variables from being added.
+public export
+close
+   : Monad m
+  => UVarCtx
+  -> UnifyCtxT m ()
+close uvarCtx = MkUnifyCtxT $ do
+  closeImpl uvarCtx
+
 public export
 unifyUVarCtxs
    : Monad m
@@ -162,41 +219,22 @@ unifyUVarCtxs
   -> UVarCtx
   -> UnifyCtxT m ()
 unifyUVarCtxs uvarCtx1 uvarCtx2 = MkUnifyCtxT $ do
+  -- Get the context information for both contexts
   MkPContext varsSoFar1 closed1 <- getPContextImpl uvarCtx1
   MkPContext varsSoFar2 closed2 <- getPContextImpl uvarCtx2
 
-  -- When unifying contexts, we need to check if variables can be added to
-  -- closed contexts. A closed context (closed=True) cannot accept new variables,
-  -- while an open context (closed=False) can.
-  varsSoFar3 <- sequence $ Map.withKey $ Map.union varsSoFar1 varsSoFar2 $ \case
-    This pty1 => \x => do
-      -- This variable from varsSoFar1 is being added to varsSoFar2, is that
-      -- allowed?
-      case closed2 of
-        True => do
-          throwE $ ContextCannotHaveVariable uvarCtx2 x
-        False => do
-          pure pty1
-    That pty2 => \x => do
-      -- This variable from varsSoFar2 is being added to varsSoFar1, is that
-      -- allowed?
-      case closed1 of
-        True => do
-          throwE $ ContextCannotHaveVariable uvarCtx1 x
-        False => do
-          pure pty2
-    Both pty1 pty2 => \_ => do
-      liftUnifyTy $ unifyPTys pty1 pty2
-      pure pty1
+  -- Make both vars share the same underlying node in the union-find.
+  -- Start with the variables from pcontext1 and add the variables from
+  -- pcontext2, so that the union contains the variables from both.
+  let pcontext1 = MkPContext varsSoFar1 closed1
+  liftUnionFind $ union uvarCtx1 uvarCtx2 $ Just pcontext1
+  for_ (Map.toList varsSoFar2) $ \(x, pty2) => do
+    insertImpl uvarCtx1 x pty2
 
   -- If either context is closed, then their union cannot accept more variables,
   -- as that would cause that closed context to accept more variables.
-  liftUnionFind $ union uvarCtx1 uvarCtx2 $ Just $ MkPContext
-    { varsSoFar
-        = varsSoFar3
-    , closed
-        = closed1 || closed2
-    }
+  when (closed1 || closed2) $ do
+    closeImpl uvarCtx1
 
 public export
 zonkUVarCtx : Monad m => UVarCtx -> UnifyCtxT m (Map String PTy)
@@ -211,6 +249,13 @@ zonkDepthUVarCtx depth uvarCtx = MkUnifyCtxT $ do
   MkPContext varsSoFar_ _ <- getPContextImpl uvarCtx
   for varsSoFar_ $ \pty => do
     liftUnifyTy $ zonkDepthPTy depth pty
+
+-- Un-zonked version of 'zonkUVarCtx'.
+public export
+getVarsSoFar : Monad m => UVarCtx -> UnifyCtxT m (Map String PTy)
+getVarsSoFar uvarCtx = MkUnifyCtxT $ do
+  MkPContext varsSoFar_ _ <- getPContextImpl uvarCtx
+  pure varsSoFar_
 
 -- Checks if a UVarCtx is closed.
 public export
