@@ -51,7 +51,7 @@ record S v where
   ranks : Map (Root v) Nat
 
 -- Wrapped in a State monad for easier manipulation.
-public export
+export
 record UnionFindT (v : Type) (m : Type -> Type) (a : Type) where
   constructor MkUnionFindT
   unUnionFindT : StateT (S v) m a

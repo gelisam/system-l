@@ -15,7 +15,7 @@ import Util.These
 
 ----------------------------------------
 
-public export
+export
 record PContext where
   constructor MkPContext
   varsSoFar
@@ -35,7 +35,7 @@ data UnifyCtxError
 Impl : (Type -> Type) -> Type -> Type
 Impl m = ExceptT UnifyCtxError (UnionFindT PContext (UnifyTyT m))
 
-public export
+export
 record UnifyCtxT (m : Type -> Type) (a : Type) where
   constructor MkUnifyCtxT
   unUnifyCtxT : Impl m a

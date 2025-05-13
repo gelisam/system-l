@@ -28,7 +28,7 @@ data InferError
 Impl : (Type -> Type) -> Type -> Type
 Impl m = ExceptT InferError (UnifyTyT m)
 
-public export
+export
 record InferT (m : Type -> Type) (a : Type) where
   constructor MkInferT
   unInferT : Impl m a

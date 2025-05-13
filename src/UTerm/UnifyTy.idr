@@ -23,7 +23,7 @@ data UnifyTyError
 Impl : (Type -> Type) -> Type -> Type
 Impl m = ExceptT UnifyTyError (UnionFindT CTy m)
 
-public export
+export
 record UnifyTyT (m : Type -> Type) (a : Type) where
   constructor MkUnifyTyT
   unUnifyTyT : Impl m a

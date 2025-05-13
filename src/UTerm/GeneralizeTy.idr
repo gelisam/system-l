@@ -28,7 +28,7 @@ PolyContext = List (String, PolyTy)
 Impl : Type -> Type
 Impl = StateT (Map (Node CTy) Nat) UnifyTy
 
-public export
+export
 record GeneralizeTy a where
   constructor MkGeneralizeTy
   unGeneralizeTy : Impl a
