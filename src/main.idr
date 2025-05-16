@@ -1,5 +1,6 @@
 import UTerm.GeneralizeTy
 import UTerm.UnifyCtx
+import UTerm.UnifyCtxWithLog
 import UTerm.UnifyTy
 import UTerm.UnionFind
 import Examples
@@ -46,5 +47,7 @@ main = do
   putStr "UnifyCtx.test5:        "; UnifyCtx.test5
   putStr "UnifyCtx.test6:        "; UnifyCtx.test6
   putStr "UnifyCtx.test7:        "; UnifyCtx.test7
+  putStr "UnifyCtxWithLog.test1: "; UnifyCtxWithLog.test1
+  putStr "UnifyCtxWithLog.test2: "; UnifyCtxWithLog.test2
   putStr "Examples.test1:        "; Examples.test1
   putStrLn "*** tests pass if no False is shown above ***"
