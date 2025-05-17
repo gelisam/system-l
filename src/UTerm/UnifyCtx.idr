@@ -1,3 +1,19 @@
+-- "UnifyCtx" stands for "Unification for Contexts". A Context is a Map from
+-- variable name to Ty. In the unification algorithm, we want to figure out
+-- which variables are part of the context and which types they have, so we use
+-- PContext, a "Partial Context" which maps each variable name to a PTy a
+-- "Partial Type". As we learn more information about each PTy, more and more of
+-- its unification variables (UVarTy) get assigned a concrete type. Similarly,
+-- as we learn more information about which variables are in the context,
+-- 'varsSoFar' gets filled with more and more variables. It is also possible to
+-- no longer be uncertain about which variables are in the context, at which
+-- point we 'close' the PContext in order to indicate that no more variables can be
+-- added.
+--
+-- The only constraint which can be expressed in UnifyCtx is that two contexts
+-- are equal, via 'unifyUVarCtxs'. The "UnifyCtxWithConstraints" module makes it
+-- possible to express more complicated constraints, e.g. that two contexts
+-- should be disjoint.
 module UTerm.UnifyCtx
 
 import Control.Monad.State

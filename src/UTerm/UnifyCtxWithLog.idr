@@ -1,3 +1,11 @@
+-- UnifyCtxWithLog is a helper for UnifyCtxWithConstraints. In that module,
+-- event handlers are allowed to react to an event by inserting new variables
+-- and closing contexts, but not by creating new unification variables. The
+-- UnifyCtxWithLog monad only provides those two operations, and is thus how
+-- handlers are implemented.
+--
+-- The WithLog part is that each operation is added to a list of events, so that
+-- the handlers can react to the operations performed by other handlers.
 module UTerm.UnifyCtxWithLog
 
 import Control.Monad.State
@@ -55,6 +63,7 @@ implementation Monad m => Monad (UnifyCtxWithLogT m) where
   (MkUnifyCtxWithLogT ma) >>= f
     = MkUnifyCtxWithLogT (ma >>= \a => unUnifyCtxWithLogT (f a))
 
+-- 'm' operations are allowed as well, but they are not logged.
 public export
 implementation MonadTrans UnifyCtxWithLogT where
   lift = MkUnifyCtxWithLogT . lift . lift
@@ -188,7 +197,6 @@ example1 = do
     -- Close the context again (should not be logged)
     close uvarCtx
 
--- Test for the example with logging
 public export
 test1 : IO ()
 test1 = printLn ( execTest example1
@@ -205,9 +213,10 @@ example2 = do
   uvarCtx <- newUVarCtx  
   pure $ do
     close uvarCtx
+    
+    -- insert after close is not allowed
     insert uvarCtx "x" uvarTy
 
--- Test for the example with logging
 public export
 test2 : IO ()
 test2 = printLn ( execTest example2
