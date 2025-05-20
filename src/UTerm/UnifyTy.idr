@@ -12,6 +12,7 @@ import UTerm.PTy
 import UTerm.UnionFind
 import Util.Depth
 import Util.ExceptT
+import Util.MapT
 
 ----------------------------------------
 
@@ -53,7 +54,7 @@ runUnifyTyWithoutGeneralizing = runIdentity . runUnifyTyTWithoutGeneralizing
 
 public export
 implementation Monad m => Functor (UnifyTyT m) where
-  map f (MkUnifyTyT m) = MkUnifyTyT $ map f m
+  map f (MkUnifyTyT body) = MkUnifyTyT $ map f body
 
 public export
 implementation Monad m => Applicative (UnifyTyT m) where
@@ -68,6 +69,10 @@ implementation Monad m => Monad (UnifyTyT m) where
 public export
 implementation MonadTrans UnifyTyT where
   lift = MkUnifyTyT . lift . lift
+
+public export
+implementation MapT UnifyTyT where
+  mapT f (MkUnifyTyT body) = MkUnifyTyT (mapT (mapT f) body)
 
 public export
 implementation MonadUnionFind v m => MonadUnionFind v (UnifyTyT m) where

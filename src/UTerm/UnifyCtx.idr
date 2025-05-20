@@ -27,6 +27,7 @@ import UTerm.UnifyTy
 import UTerm.UnionFind
 import Util.ExceptT
 import Util.Map as Map
+import Util.MapT
 import Util.These
 
 ----------------------------------------
@@ -85,7 +86,7 @@ runUnifyCtxWithoutGeneralizing
 
 public export
 implementation Monad m => Functor (UnifyCtxT m) where
-  map f (MkUnifyCtxT m) = MkUnifyCtxT $ map f m
+  map f (MkUnifyCtxT body) = MkUnifyCtxT $ map f body
 
 public export
 implementation Monad m => Applicative (UnifyCtxT m) where
@@ -100,6 +101,10 @@ implementation Monad m => Monad (UnifyCtxT m) where
 public export
 implementation MonadTrans UnifyCtxT where
   lift = MkUnifyCtxT . lift . lift . lift
+
+public export
+implementation MapT UnifyCtxT where
+  mapT f (MkUnifyCtxT body) = MkUnifyCtxT (mapT (mapT (mapT f)) body)
 
 -- Note that UnifyCtxT discharges the MonadUnifyTy constraint, it does _not_
 -- delegate to the m. Being able to unify type variables is an important part of

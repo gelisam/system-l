@@ -7,6 +7,8 @@ module Util.ExceptT
 
 import Control.Monad.Trans
 
+import Util.MapT
+
 ----------------------------------------
 
 public export
@@ -56,3 +58,7 @@ implementation MonadTrans (ExceptT e) where
   lift body = MkExceptT $ do
     a <- body
     pure $ Right a
+
+public export
+implementation {e : Type} -> MapT (ExceptT e) where
+  mapT f (MkExceptT body) = MkExceptT (f body)

@@ -6,6 +6,7 @@ import Data.SortedMap
 
 import Util.ExceptT
 import Util.Map
+import Util.MapT
 
 ----------------------------------------
 
@@ -187,7 +188,7 @@ union node1 node2 maybeV = MkUnionFindT $ do
 
 public export
 implementation Monad m => Functor (UnionFindT v m) where
-  map f (MkUnionFindT m) = MkUnionFindT $ map f m
+  map f (MkUnionFindT body) = MkUnionFindT $ map f body
 
 public export
 implementation Monad m => Applicative (UnionFindT v m) where
@@ -201,6 +202,10 @@ implementation Monad m => Monad (UnionFindT v m) where
 public export
 implementation MonadTrans (UnionFindT v) where
   lift = MkUnionFindT . lift
+
+public export
+implementation {v : Type} -> MapT (UnionFindT v) where
+  mapT f (MkUnionFindT body) = MkUnionFindT (mapT f body)
 
 ----------------------------------------
 

@@ -16,6 +16,7 @@ import UTerm.UnifyCtx as UnifyCtx
 import UTerm.UnifyTy
 import UTerm.UnionFind
 import Util.Map as Map
+import Util.MapT
 
 ----------------------------------------
 
@@ -50,7 +51,7 @@ runUnifyCtxWithLog = runUnifyCtxWithLogT
 
 public export
 implementation Monad m => Functor (UnifyCtxWithLogT m) where
-  map f (MkUnifyCtxWithLogT m) = MkUnifyCtxWithLogT $ map f m
+  map f (MkUnifyCtxWithLogT body) = MkUnifyCtxWithLogT $ map f body
 
 public export
 implementation Monad m => Applicative (UnifyCtxWithLogT m) where
@@ -67,6 +68,10 @@ implementation Monad m => Monad (UnifyCtxWithLogT m) where
 public export
 implementation MonadTrans UnifyCtxWithLogT where
   lift = MkUnifyCtxWithLogT . lift . lift
+
+public export
+implementation MapT UnifyCtxWithLogT where
+  mapT f (MkUnifyCtxWithLogT body) = MkUnifyCtxWithLogT (mapT (mapT f) body)
 
 ----------------------------------------
 
