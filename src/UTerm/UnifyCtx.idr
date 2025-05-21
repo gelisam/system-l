@@ -29,20 +29,9 @@ import Util.ExceptT
 import Util.Map as Map
 import Util.MapT
 import Util.These
+import UTerm.ObserveCtx
 
 ----------------------------------------
-
-export
-record PContext where
-  constructor MkPContext
-  varsSoFar
-     : Map String PTy
-  closed
-     : Bool
-
-public export
-UVarCtx : Type
-UVarCtx = Node PContext
 
 public export
 data UnifyCtxError
@@ -118,6 +107,19 @@ implementation Monad m => MonadUnifyTy (UnifyCtxT m) where
         let body' : UnifyTyT m a
             body' = liftUnifyTy body
         lift $ lift body'
+
+-- UnifyCtxT also discharges the MonadObserveCtx constraint. Being able to
+-- observe the contexts is another important part of UnifyCtxT's API.
+public export
+implementation Monad m => MonadObserveCtx (UnifyCtxT m) where
+  liftObserveCtx body = MkUnifyCtxT $ do
+    let action : UnionFindT PContext UnifyTy a
+        action = runObserveCtx body
+    let f : Identity x -> m x
+        f (Id x) = pure x
+    let actionT : UnionFindT PContext (UnifyTyT m) a
+        actionT = mapT (mapT f) action
+    lift actionT
 
 ----------------------------------------
 
@@ -258,43 +260,6 @@ unifyUVarCtxs uvarCtx1 uvarCtx2 = MkUnifyCtxT $ do
     closeImpl uvarCtx1
 
 public export
-zonkUVarCtx : Monad m => UVarCtx -> UnifyCtxT m (Map String PTy)
-zonkUVarCtx uvarCtx = MkUnifyCtxT $ do
-  MkPContext varsSoFar_ _ <- getPContextImpl uvarCtx
-  for varsSoFar_ $ \pty => do
-    liftUnifyTy $ zonkPTy pty
-
-public export
-zonkDepthUVarCtx : Monad m => Nat -> UVarCtx -> UnifyCtxT m (Map String PTy)
-zonkDepthUVarCtx depth uvarCtx = MkUnifyCtxT $ do
-  MkPContext varsSoFar_ _ <- getPContextImpl uvarCtx
-  for varsSoFar_ $ \pty => do
-    liftUnifyTy $ zonkDepthPTy depth pty
-
--- Un-zonked version of 'zonkUVarCtx'.
-public export
-getVarsSoFar : Monad m => UVarCtx -> UnifyCtxT m (Map String PTy)
-getVarsSoFar uvarCtx = MkUnifyCtxT $ do
-  MkPContext varsSoFar_ _ <- getPContextImpl uvarCtx
-  pure varsSoFar_
-
--- Checks if a UVarCtx is closed.
-public export
-isClosedUVarCtx : Monad m => UVarCtx -> UnifyCtxT m Bool
-isClosedUVarCtx uvarCtx = MkUnifyCtxT $ do
-  MkPContext _ closed <- getPContextImpl uvarCtx
-  pure closed
-
--- Checks if a UVarCtx is open.
-public export
-isOpenUVarCtx : Monad m => UVarCtx -> UnifyCtxT m Bool
-isOpenUVarCtx uvarCtx = MkUnifyCtxT $ do
-  MkPContext _ closed <- getPContextImpl uvarCtx
-  pure (not closed)
-
-----------------------------------------
-
-public export
 showUnifyCtxError : UnifyCtxError -> String
 showUnifyCtxError (ContextCannotHaveVariable (MkNode i) var) =
   "Context ??" ++ show i ++ " cannot have variable " ++ show var
@@ -347,10 +312,10 @@ example1 = do
   unifyUVarCtxs uvarCtx1 uvarCtx2
   unifyUVarCtxs uvarCtx2 uvarCtx3
 
-  vars1 <- zonkUVarCtx uvarCtx1
-  vars2 <- zonkUVarCtx uvarCtx2
-  vars3 <- zonkUVarCtx uvarCtx3
-  vars4 <- zonkUVarCtx uvarCtx4
+  vars1 <- liftObserveCtx $ zonkUVarCtx uvarCtx1
+  vars2 <- liftObserveCtx $ zonkUVarCtx uvarCtx2
+  vars3 <- liftObserveCtx $ zonkUVarCtx uvarCtx3
+  vars4 <- liftObserveCtx $ zonkUVarCtx uvarCtx4
   pure (vars1, vars2, vars3, vars4)
 
 -- The algorithm doesn't guarantee which variable is chosen as the root (see
@@ -395,8 +360,8 @@ example2 = do
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
 
-  vars1 <- zonkUVarCtx uvarCtx1
-  vars2 <- zonkUVarCtx uvarCtx2
+  vars1 <- liftObserveCtx $ zonkUVarCtx uvarCtx1
+  vars2 <- liftObserveCtx $ zonkUVarCtx uvarCtx2
   pure (vars1, vars2)
 
 public export
@@ -479,8 +444,8 @@ example5 = do
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
 
-  vars1 <- zonkDepthUVarCtx 3 uvarCtx1
-  vars2 <- zonkDepthUVarCtx 3 uvarCtx2
+  vars1 <- liftObserveCtx $ zonkDepthUVarCtx 3 uvarCtx1
+  vars2 <- liftObserveCtx $ zonkDepthUVarCtx 3 uvarCtx2
   pure (vars1, vars2)
 
 public export
@@ -509,7 +474,7 @@ example6 = do
   unifyUVarCtxs uvarCtx1 uvarCtx2
 
   -- Check if the result is closed
-  isClosedUVarCtx uvarCtx1
+  liftObserveCtx $ isClosedUVarCtx uvarCtx1
 
 public export
 test6 : IO ()

@@ -11,6 +11,7 @@ module UTerm.UnifyCtxWithLog
 import Control.Monad.State
 import Data.SortedMap as Map
 
+import UTerm.ObserveCtx
 import UTerm.PTy
 import UTerm.UnifyCtx as UnifyCtx
 import UTerm.UnifyTy
@@ -73,34 +74,18 @@ public export
 implementation MapT UnifyCtxWithLogT where
   mapT f (MkUnifyCtxWithLogT body) = MkUnifyCtxWithLogT (mapT (mapT f) body)
 
+-- Note that UnifyCtxWithLogT discharges the MonadObserveCtx constraint, it does
+-- _not_ delegate to the m. Being able to observe the contexts is an important
+-- part of UnifyCtxWithLogT's API.
+public export
+implementation Monad m => MonadObserveCtx (UnifyCtxWithLogT m) where
+  liftObserveCtx body = MkUnifyCtxWithLogT $ do
+    lift $ liftObserveCtx body
+
 ----------------------------------------
 
 -- Note that newUVarCtx is not provided: it is only possible to provide more
 -- information about the existing UVarCtx, not to deepen the mystery.
-
-public export
-getVarsSoFar
-   : Monad m
-  => UVarCtx
-  -> UnifyCtxWithLogT m (Map String PTy)
-getVarsSoFar uvarCtx = MkUnifyCtxWithLogT $ do
-  lift $ UnifyCtx.getVarsSoFar uvarCtx
-
-public export
-isClosedUVarCtx
-   : Monad m
-  => UVarCtx
-  -> UnifyCtxWithLogT m Bool
-isClosedUVarCtx uvarCtx = MkUnifyCtxWithLogT $ do
-  lift $ UnifyCtx.isClosedUVarCtx uvarCtx
-
-public export
-isOpenUVarCtx
-   : Monad m
-  => UVarCtx
-  -> UnifyCtxWithLogT m Bool
-isOpenUVarCtx uvarCtx = MkUnifyCtxWithLogT $ do
-  lift $ UnifyCtx.isOpenUVarCtx uvarCtx
 
 -- Logs an 'Added' event if the variable was not previously in the context.
 public export
@@ -112,7 +97,7 @@ insert
   -> UnifyCtxWithLogT m ()
 insert uvarCtx x pty = MkUnifyCtxWithLogT $ do
   -- Get the current variables in the context
-  previousVars <- lift $ UnifyCtx.getVarsSoFar uvarCtx
+  previousVars <- liftObserveCtx $ getVarsSoFar uvarCtx
   
   -- Perform the insert operation
   lift $ UnifyCtx.insert uvarCtx x pty
@@ -132,7 +117,7 @@ close
   -> UnifyCtxWithLogT m ()
 close uvarCtx = MkUnifyCtxWithLogT $ do
   -- Check if the context is already closed
-  wasClosed <- lift $ UnifyCtx.isClosedUVarCtx uvarCtx
+  wasClosed <- liftObserveCtx $ isClosedUVarCtx uvarCtx
   
   -- Perform the close operation
   lift $ UnifyCtx.close uvarCtx
