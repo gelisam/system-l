@@ -5,6 +5,7 @@
 -- equivalent of hackage, so I wrote my own.
 module Util.ExceptT
 
+import Control.Monad.Identity
 import Control.Monad.Trans
 
 import Util.MapT
@@ -16,8 +17,16 @@ data ExceptT : (e : Type) -> (m : Type -> Type) -> (a : Type) -> Type where
   MkExceptT : m (Either e a) -> ExceptT e m a
 
 public export
+Except : Type -> Type -> Type
+Except e = ExceptT e Identity
+
+public export
 runExceptT : ExceptT e m a -> m (Either e a)
 runExceptT (MkExceptT body) = body
+
+public export
+runExcept : Except e a -> Either e a
+runExcept = runIdentity . runExceptT
 
 public export
 throwE : Monad m => e -> ExceptT e m a
