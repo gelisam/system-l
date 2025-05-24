@@ -254,8 +254,8 @@ mutual
   inferConsumer (UApp producerA consumerB) = do
     (g, a, d) <- inferProducer producerA
     (g', b, d') <- inferConsumer consumerB
-    gg' <- unifyIdenticalGammas g g'
-    dd' <- unifyIdenticalDeltas d d'
+    gg' <- mergeDisjointContexts g g'
+    dd' <- mergeDisjointContexts d d'
     pure (gg', PImp a b, dd')
   inferConsumer (UMatchBridge x y bg_to_ad) = do
     (bg, ad) <- inferCmd bg_to_ad

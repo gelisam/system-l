@@ -247,6 +247,17 @@ uapply f in_ out
         (UVar in_)
         (UCoVar out))
 
+public export
+test2 : IO ()
+test2 = printLn ( (runInferCmd $ uapply "f" "a" "b")
+               == Right ( [ ("a", QVar 0)
+                          , ("f", PolyImp (QVar 0) (QVar 1))
+                          ]
+                        , [ ("b", QVar 1)
+                          ]
+                        )
+                )
+
 ----------------------------------------
 
 public export
@@ -426,6 +437,14 @@ ulocalCompletenessOfImp
             (UVar "a")
             (UCoVar "b"))))
 
+public export
+test3 : IO ()
+test3 = printLn ( (runInferCmd $ ulocalCompletenessOfImp)
+               == Right ( [("in", PolyImp (QVar 0) (QVar 1))]
+                        , [("out", PolyImp (QVar 0) (QVar 1))]
+                        )
+                )
+
 ----------------------------------------
 
 ilocalCompletenessOfBridge
@@ -455,6 +474,15 @@ ulocalCompletenessOfBridge
           (UConnect
             (UCoVar "a")
             (UVar "b"))))
+
+public export
+test4 : IO ()
+test4 = printLn ( (runInferCmd $ ulocalCompletenessOfBridge)
+               == Right ( [("in", PolyBridge (QVar 0) (QVar 1))]
+                        , [("out", PolyBridge (QVar 0) (QVar 1))]
+                        )
+                )
+
 ----------------------------------------
 
 -- localCompletenessOfTen aTenB
@@ -488,6 +516,14 @@ ulocalCompletenessOfTen
           (UPair
             (UVar "a")
             (UVar "b"))))
+
+public export
+test5 : IO ()
+test5 = printLn ( (runInferCmd $ ulocalCompletenessOfTen)
+               == Right ( [("in", PolyTen (QVar 0) (QVar 1))]
+                        , [("out", PolyTen (QVar 0) (QVar 1))]
+                        )
+                )
 
 ----------------------------------------
 
@@ -530,6 +566,14 @@ ulocalCompletenessOfSum
           (uproduce "out"
             (URight (UVar "b")))))
 
+public export
+test6 : IO ()
+test6 = printLn ( (runInferCmd $ ulocalCompletenessOfSum)
+               == Right ( [("in", PolySum (QVar 0) (QVar 1))]
+                        , [("out", PolySum (QVar 0) (QVar 1))]
+                        )
+                )
+
 ----------------------------------------
 
 -- fst (localCompletenessOfWith aWithB)
@@ -571,6 +615,14 @@ ulocalCompletenessOfWith
           (uconsume "in"
             (USnd (UCoVar "b")))))
 
+public export
+test7 : IO ()
+test7 = printLn ( (runInferCmd $ ulocalCompletenessOfWith)
+               == Right ( [("in", PolyWith (QVar 0) (QVar 1))]
+                        , [("out", PolyWith (QVar 0) (QVar 1))]
+                        )
+                )
+
 ----------------------------------------
 
 public export
@@ -601,3 +653,11 @@ ulocalCompletenessOfPar
           (UHandlePar
             (UCoVar "a")
             (UCoVar "b"))))
+
+public export
+test8 : IO ()
+test8 = printLn ( (runInferCmd $ ulocalCompletenessOfPar)
+               == Right ( [("in", PolyPar (QVar 0) (QVar 1))]
+                        , [("out", PolyPar (QVar 0) (QVar 1))]
+                        )
+                )

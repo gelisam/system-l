@@ -50,4 +50,11 @@ main = do
   putStr "UnifyCtxWithLog.test1: "; UnifyCtxWithLog.test1
   putStr "UnifyCtxWithLog.test2: "; UnifyCtxWithLog.test2
   putStr "Examples.test1:        "; Examples.test1
+  putStr "Examples.test2:        "; Examples.test2
+  putStr "Examples.test3:        "; Examples.test3
+  putStr "Examples.test4:        "; Examples.test4
+  putStr "Examples.test5:        "; Examples.test5
+  putStr "Examples.test6:        "; Examples.test6
+  putStr "Examples.test7:        "; Examples.test7
+  putStr "Examples.test8:        "; Examples.test8
   putStrLn "*** tests pass if no False is shown above ***"
