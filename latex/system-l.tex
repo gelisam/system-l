@@ -1,0 +1,236 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{trfrac}
+
+\def\with{\mathbin{\&}}
+\def\parr{\mathbin{\raisebox{-0.25ex}{\rotatebox[origin=c]{180}{\&}}}}
+
+\begin{document}
+
+\noindent
+{\huge \textbf{System L}}
+
+\section{Syntax}
+
+\noindent
+\[\arraycolsep=1.4pt
+\begin{array}{rlrlrl}
+  c ::= & \text{cut}\;e\;\bar{e}
+  \vspace{1ex}\\
+  e ::= & x
+  &
+  \bar{e}
+    ::= & \bar{x}
+  \\
+  \mid & \mu\,\bar{x}.\,c
+  &
+  \mid & \bar{\mu}\,x.\,c
+  \\
+  \mid & \text{lambda}\,x\,\bar{y}.\,c
+  &
+  \mid & \text{apply-lambda}\;e\;\bar{e}
+  &
+  \hspace{1em}
+  \tau ::= & \tau \to \tau
+  \\
+  \mid & \text{bridge}\;\bar{e}\;e
+  &
+  \mid & \text{match-bridge}\,\bar{x}\,y.\,c
+  &
+  \mid & \tau \Rightarrow \tau
+  \\
+  \mid & \text{pair}\;e\;e
+  &
+  \mid & \text{match-pair}\,x\,y.\,c
+  &
+  \mid & \tau \otimes \tau
+  \\
+  \mid & \text{left}\;e \mid \text{right}\;e
+  &
+  \mid & \text{match-sum}\;\bar{e}\;\bar{e}
+  &
+  \mid & \tau \oplus \tau
+  \\
+  \mid & \text{comatch-with}\;e\;e
+  &
+  \mid & \text{fst}\;\bar{e} \mid \text{snd}\;\bar{e}
+  &
+  \mid & \tau \with \tau
+  \\
+  \mid & \text{comatch-par}\,x\,y.\,c
+  &
+  \mid & \text{handle-par}\;\bar{e}\;\bar{e}
+  &
+  \mid & \tau \parr \tau
+  \vspace{1ex}\\
+  \Gamma ::= & \cdot
+          \mid \Gamma, x : \tau
+  &
+  \bar{\Gamma}
+         ::= & \cdot
+          \mid \bar{\Gamma}, \bar{x} : \tau
+\end{array}
+\]
+\vspace{1ex}
+
+\pagebreak
+
+\section{Typing Rules}
+
+\noindent
+\[\arraycolsep=0em
+\begin{array}{c}
+  \boxed{\Gamma \vdash c \vdash \bar{\Gamma}}
+  \vspace{1ex}
+  \\
+  \makebox[0em]{\centering \textbf{Command(s)}}
+\vspace{2ex}
+\\
+  \trfrac
+  {
+    \Gamma_1 \vdash e \vdash \langle\tau\rangle; \bar{\Gamma}_1
+    \qquad
+    \langle\tau\rangle; \Gamma_2 \vdash \bar{e} \vdash \bar{\Gamma}_2
+  }
+  {\Gamma_1, \Gamma_2 \vdash \text{cut}\;e\;\bar{e} \vdash \bar{\Gamma}_1, \bar{\Gamma}_2}
+\end{array}
+\]
+\vspace{2ex}
+\noindent
+\[\arraycolsep=0em
+\begin{array}{ccc}
+  \boxed{\Gamma \vdash e \vdash \langle\tau\rangle; \bar{\Gamma}}
+  &
+  \boxed{\langle\tau\rangle; \Gamma \vdash \bar{e} \vdash \bar{\Gamma}}
+  \vspace{1ex}
+  \\
+  \makebox[0em]{\centering \textbf{Producers}}
+  &
+  \makebox[0em]{\centering \textbf{Consumers}}
+  \vspace{2ex}
+  \\
+  \trfrac
+  {}
+  {x : \tau \vdash x \vdash \langle\tau\rangle; \cdot}
+  &
+  \trfrac
+  {}
+  {\langle\tau\rangle; \cdot \vdash \bar{x} \vdash \bar{x} : \tau}
+  &
+\vspace{2ex}
+\\
+  \trfrac
+  {\Gamma \vdash c \vdash \bar{x} : \tau, \bar{\Gamma}}
+  {\Gamma \vdash \mu\,\bar{x}.\,c \vdash \langle\tau\rangle; \bar{\Gamma}}
+  &
+  \trfrac
+  {x : \tau, \Gamma \vdash c \vdash \bar{\Gamma}}
+  {\langle\tau\rangle; \Gamma \vdash \bar{\mu}\,x.\,c \vdash \bar{\Gamma}}
+  &
+\vspace{3ex}
+\\
+  \trfrac
+  {
+    x : \tau_1, \Gamma \vdash c \vdash \bar{y} : \tau_2, \bar{\Gamma}
+  }
+  {\Gamma \vdash \text{lambda}\,x\,\bar{y}.\,c \vdash \langle\tau_1 \to \tau_2\rangle; \bar{\Gamma}}
+  &
+  \trfrac
+  {
+    \Gamma_1 \vdash e \vdash \langle\tau_1\rangle; \bar{\Gamma}_1
+    \qquad
+    \langle\tau_2\rangle; \Gamma_2 \vdash \bar{e} \vdash \bar{\Gamma}_2
+  }
+  {\langle\tau_1 \to \tau_2\rangle; \Gamma_1, \Gamma_2 \vdash \text{apply-lambda}\;e\;\bar{e} \vdash \bar{\Gamma}_1, \bar{\Gamma}_2}
+\vspace{3ex}
+\\
+  \trfrac
+  {
+    \langle\tau_1\rangle; \Gamma_1 \vdash \bar{e} \vdash \bar{\Gamma}_1
+    \qquad
+    \Gamma_2 \vdash e \vdash \langle\tau_2\rangle; \bar{\Gamma}_2
+  }
+  {\Gamma_1, \Gamma_2 \vdash \text{bridge}\;\bar{e}\;e \vdash \langle\tau_1 \Rightarrow \tau_2\rangle; \bar{\Gamma}_1, \bar{\Gamma}_2}
+  &
+  \trfrac
+  {y : \tau_2, \Gamma \vdash c \vdash \bar{x} : \tau_1, \bar{\Gamma}}
+  {\langle\tau_1 \Rightarrow \tau_2\rangle; \Gamma \vdash \text{match-bridge}\,\bar{x}\,y.\,c \vdash \bar{\Gamma}}
+  &
+\vspace{3ex}
+\\
+  \trfrac
+  {
+    \Gamma_1 \vdash e_1 \vdash \langle\tau_1\rangle; \bar{\Gamma}_1
+    \qquad
+    \Gamma_2 \vdash e_2 \vdash \langle\tau_2\rangle; \bar{\Gamma}_2
+  }
+  {\Gamma_1, \Gamma_2 \vdash \text{pair}\;e_1\;e_2 \vdash \langle\tau_1 \otimes \tau_2\rangle; \bar{\Gamma}_1, \bar{\Gamma}_2}
+  &
+  \trfrac
+  {\Gamma, x : \tau_1, y : \tau_2 \vdash c \vdash \bar{\Gamma}}
+  {\langle\tau_1 \otimes \tau_2\rangle; \Gamma \vdash \text{match-pair}\,x\,y.\,c \vdash \bar{\Gamma}}
+  &
+\vspace{3ex}
+\\
+  \begin{array}{ccc}
+  \trfrac
+  {\Gamma \vdash e_1 \vdash \langle\tau_1\rangle; \bar{\Gamma}}
+  {\Gamma \vdash \text{left}\;e_1 \vdash \langle\tau_1 \oplus \tau_2\rangle; \bar{\Gamma}}
+  &
+  \hspace{1em}
+  &
+  \trfrac
+  {\Gamma \vdash e_2 \vdash \langle\tau_2\rangle; \bar{\Gamma}}
+  {\Gamma \vdash \text{right}\;e_2 \vdash \langle\tau_1 \oplus \tau_2\rangle; \bar{\Gamma}}
+  \end{array}
+  &
+  \trfrac
+  {
+    \langle\tau_1\rangle; \Gamma \vdash \bar{e}_1 \vdash \bar{\Gamma}
+    \qquad
+    \langle\tau_2\rangle; \Gamma \vdash \bar{e}_2 \vdash \bar{\Gamma}
+  }
+  {\langle\tau_1 \oplus \tau_2\rangle; \Gamma \vdash \text{match-sum}\;\bar{e}_1\;\bar{e}_2 \vdash \bar{\Gamma}}
+  &
+\vspace{3ex}
+\\
+  \trfrac
+  {
+    \Gamma \vdash e_1 \vdash \langle\tau_1\rangle; \bar{\Gamma}
+    \qquad
+    \Gamma \vdash e_2 \vdash \langle\tau_2\rangle; \bar{\Gamma}
+  }
+  {\Gamma \vdash \text{comatch-with}\;e_1\;e_2 \vdash \langle\tau_1 \with \tau_2\rangle; \bar{\Gamma}}
+  &
+  \begin{array}{ccc}
+  \trfrac
+  {\langle\tau_1\rangle; \Gamma \vdash \bar{e}_1 \vdash \bar{\Gamma}}
+  {\langle\tau_1 \with \tau_2\rangle; \Gamma \vdash \text{fst}\;\bar{e}_1 \vdash \bar{\Gamma}}
+  &
+  \hspace{1em}
+  &
+  \trfrac
+  {\langle\tau_2\rangle; \Gamma \vdash \bar{e}_2 \vdash \bar{\Gamma}}
+  {\langle\tau_1 \with \tau_2\rangle; \Gamma \vdash \text{snd}\;\bar{e}_2 \vdash \bar{\Gamma}}
+  \end{array}
+  &
+\vspace{3ex}
+\\
+  \trfrac
+  {\Gamma \vdash c \vdash x : \tau_1, y : \tau_2, \bar{\Gamma}}
+  {\Gamma \vdash \text{comatch-par}\,x\,y.\,c \vdash \langle\tau_1 \parr \tau_2\rangle; \bar{\Gamma}}
+  &
+  \trfrac
+  {
+    \langle\tau_1\rangle; \Gamma_1 \vdash \bar{e}_1 \vdash \bar{\Gamma}_1
+    \qquad
+    \langle\tau_2\rangle; \Gamma_2 \vdash \bar{e}_2 \vdash \bar{\Gamma}_2
+  }
+  {\langle\tau_1 \parr \tau_2\rangle; \Gamma_1, \Gamma_2 \vdash \text{handle-par}\;\bar{e}_1\;\bar{e}_2 \vdash \bar{\Gamma}_1, \bar{\Gamma}_2}
+  &
+\end{array}
+\]
+\end{document}
