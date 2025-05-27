@@ -4,9 +4,9 @@ module Ty
 
 public export
 data TyF : Type -> Type where
-  ImpF : r -> r -> TyF r
-  BridgeF : r -> r -> TyF r
-  TenF : r -> r -> TyF r
+  ImpF : r -> r -> TyF r  -- implies
+  MinusF : r -> r -> TyF r
+  TenF : r -> r -> TyF r  -- tensor
   SumF : r -> r -> TyF r
   WithF : r -> r -> TyF r
   ParF : r -> r -> TyF r
@@ -20,8 +20,8 @@ Imp : Ty -> Ty -> Ty
 Imp a b = MkTy (ImpF a b)
 
 public export
-Bridge : Ty -> Ty -> Ty
-Bridge a b = MkTy (BridgeF a b)
+Minus : Ty -> Ty -> Ty
+Minus a b = MkTy (MinusF a b)
 
 public export
 Ten : Ty -> Ty -> Ty
@@ -46,9 +46,9 @@ implementation Show r => Show (TyF r) where
   showPrec p (ImpF a b)
     = showParens (p /= Open)
     $ "ImpF " ++ showPrec App a ++ " " ++ showPrec App b
-  showPrec p (BridgeF a b)
+  showPrec p (MinusF a b)
     = showParens (p /= Open)
-    $ "BridgeF " ++ showPrec App a ++ " " ++ showPrec App b
+    $ "MinusF " ++ showPrec App a ++ " " ++ showPrec App b
   showPrec p (TenF a b)
     = showParens (p /= Open)
     $ "TenF " ++ showPrec App a ++ " " ++ showPrec App b
@@ -67,7 +67,7 @@ implementation Eq r => Eq (TyF r) where
   ImpF a1 b1 == ImpF a2 b2
     = a1 == a2
    && b1 == b2
-  BridgeF a1 b1 == BridgeF a2 b2
+  MinusF a1 b1 == MinusF a2 b2
     = a1 == a2
    && b1 == b2
   TenF a1 b1 == TenF a2 b2
@@ -89,8 +89,8 @@ public export
 implementation Functor TyF where
   map f (ImpF a b)
     = ImpF (f a) (f b)
-  map f (BridgeF a b)
-    = BridgeF (f a) (f b)
+  map f (MinusF a b)
+    = MinusF (f a) (f b)
   map f (TenF a b)
     = TenF (f a) (f b)
   map f (SumF a b)
@@ -104,7 +104,7 @@ public export
 implementation Foldable TyF where
   foldr f z (ImpF a b)
     = f a (f b z)
-  foldr f z (BridgeF a b)
+  foldr f z (MinusF a b)
     = f a (f b z)
   foldr f z (TenF a b)
     = f a (f b z)
@@ -119,8 +119,8 @@ public export
 implementation Traversable TyF where
   traverse f (ImpF a b)
     = ImpF <$> f a <*> f b
-  traverse f (BridgeF a b)
-    = BridgeF <$> f a <*> f b
+  traverse f (MinusF a b)
+    = MinusF <$> f a <*> f b
   traverse f (TenF a b)
     = TenF <$> f a <*> f b
   traverse f (SumF a b)
@@ -135,9 +135,9 @@ implementation Show Ty where
   showPrec p (MkTy (ImpF a b))
     = showParens (p /= Open)
     $ "Imp " ++ showPrec App a ++ " " ++ showPrec App b
-  showPrec p (MkTy (BridgeF a b))
+  showPrec p (MkTy (MinusF a b))
     = showParens (p /= Open)
-    $ "Bridge " ++ showPrec App a ++ " " ++ showPrec App b
+    $ "Minus " ++ showPrec App a ++ " " ++ showPrec App b
   showPrec p (MkTy (TenF a b))
     = showParens (p /= Open)
     $ "Ten " ++ showPrec App a ++ " " ++ showPrec App b
@@ -156,7 +156,7 @@ implementation Eq Ty where
   MkTy (ImpF a1 b1) == MkTy (ImpF a2 b2)
     = a1 == a2
    && b1 == b2
-  MkTy (BridgeF a1 b1) == MkTy (BridgeF a2 b2)
+  MkTy (MinusF a1 b1) == MkTy (MinusF a2 b2)
     = a1 == a2
    && b1 == b2
   MkTy (TenF a1 b1) == MkTy (TenF a2 b2)

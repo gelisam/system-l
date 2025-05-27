@@ -334,75 +334,75 @@ uuncurry a b c pa2b2c
 ----------------------------------------
 
 public export
-icurryBridge
+icurryMinus
    : {a, b, c : Ty}
   -> ICmd [a] [b, c]
-  -> IConsumer [] (Bridge c (Bridge b a)) []
-icurryBridge {a} {b} {c} cmd
-  = IMatchBridge
-      c (Bridge b a)
+  -> IConsumer [] (Minus c (Minus b a)) []
+icurryMinus {a} {b} {c} cmd
+  = IFillGap
+      c (Minus b a)
       (iconsume
-        [Bridge b a] Here
-        (IMatchBridge
+        [Minus b a] Here
+        (IFillGap
           b a
           cmd))
 
 public export
-ucurryBridge
+ucurryMinus
    : String
   -> String
   -> String
   -> UCmd
   -> UConsumer
-ucurryBridge a b c cmd
-  = UMatchBridge
-      c "bBridgeA"
+ucurryMinus a b c cmd
+  = UFillGap
+      c "bMinusA"
       (uconsume
-        "bBridgeA"
-        (UMatchBridge
+        "bMinusA"
+        (UFillGap
           b a
           cmd))
 
 ----------------------------------------
 
 public export
-iuncurryBridge
+iuncurryMinus
    : {a, b, c : Ty}
-  -> IConsumer [] (Bridge c (Bridge b a)) []
+  -> IConsumer [] (Minus c (Minus b a)) []
   -> ICmd [a] [b, c]
-iuncurryBridge {a} {b} {c} cCBridgeBBridgeA
+iuncurryMinus {a} {b} {c} cCMinusBMinusA
   = ICut
-      (Bridge c (Bridge b a))
+      (Minus c (Minus b a))
       [a] allLeft
       [b, c] allLeft
-      (IConnect
-        c (Bridge b a)
+      (IGap
+        c (Minus b a)
         [a] allRight
         [b, c] (PickRight $ PickLeft Nil)
         (ICoVar c)
-        (IConnect
+        (IGap
           b a
           [a] allRight
           [b] allLeft
           (ICoVar b)
           (IVar a)))
-      cCBridgeBBridgeA
+      cCMinusBMinusA
 
 public export
-uuncurryBridge
+uuncurryMinus
    : String
   -> String
   -> String
   -> UConsumer
   -> UCmd
-uuncurryBridge a b c cCBridgeBBridgeA
+uuncurryMinus a b c cCMinusBMinusA
   = UCut
-      (UConnect
+      (UGap
         (UCoVar c)
-        (UConnect
+        (UGap
           (UCoVar b)
           (UVar a)))
-      cCBridgeBBridgeA
+      cCMinusBMinusA
 
 ----------------------------------------
 
@@ -447,39 +447,39 @@ test3 = printLn ( (runInferCmd $ ulocalCompletenessOfImp)
 
 ----------------------------------------
 
-ilocalCompletenessOfBridge
+ilocalCompletenessOfMinus
    : {a, b : Ty}
-  -> ICmd [Bridge a b] [Bridge a b]
-ilocalCompletenessOfBridge {a} {b}
+  -> ICmd [Minus a b] [Minus a b]
+ilocalCompletenessOfMinus {a} {b}
   = iconsume
-      [Bridge a b] Here
-      (IMatchBridge
+      [Minus a b] Here
+      (IFillGap
         a b
         (iproduce
-          [a, Bridge a b] (There Here)
-          (IConnect
+          [a, Minus a b] (There Here)
+          (IGap
             a b
             [b] allRight
             [a] allLeft
             (ICoVar a)
             (IVar b))))
 
-ulocalCompletenessOfBridge
+ulocalCompletenessOfMinus
    : UCmd
-ulocalCompletenessOfBridge
+ulocalCompletenessOfMinus
   = uconsume "in"
-      (UMatchBridge
+      (UFillGap
         "a" "b"
         (uproduce "out"
-          (UConnect
+          (UGap
             (UCoVar "a")
             (UVar "b"))))
 
 public export
 test4 : IO ()
-test4 = printLn ( (runInferCmd $ ulocalCompletenessOfBridge)
-               == Right ( [("in", PolyBridge (QVar 0) (QVar 1))]
-                        , [("out", PolyBridge (QVar 0) (QVar 1))]
+test4 = printLn ( (runInferCmd $ ulocalCompletenessOfMinus)
+               == Right ( [("in", PolyMinus (QVar 0) (QVar 1))]
+                        , [("out", PolyMinus (QVar 0) (QVar 1))]
                         )
                 )
 

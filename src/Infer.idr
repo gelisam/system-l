@@ -208,12 +208,12 @@ mutual
     (a, g) <- pullVarFromGamma x ag
     (b, d) <- pullVarFromDelta y bd
     pure (g, PImp a b, d)
-  inferProducer (UConnect consumerA producerB) = do
+  inferProducer (UGap consumerA producerB) = do
     (g, a, d) <- inferConsumer consumerA
     (g', b, d') <- inferProducer producerB
     gg' <- mergeDisjointContexts g g'
     dd' <- mergeDisjointContexts d d'
-    pure (gg', PBridge a b, dd')
+    pure (gg', PMinus a b, dd')
   inferProducer (UPair producerA producerB) = do
     (g, a, d) <- inferProducer producerA
     (g', b, d') <- inferProducer producerB
@@ -257,11 +257,11 @@ mutual
     gg' <- mergeDisjointContexts g g'
     dd' <- mergeDisjointContexts d d'
     pure (gg', PImp a b, dd')
-  inferConsumer (UMatchBridge x y bg_to_ad) = do
+  inferConsumer (UFillGap x y bg_to_ad) = do
     (bg, ad) <- inferCmd bg_to_ad
     (b, g) <- pullVarFromGamma y bg
     (a, d) <- pullVarFromDelta x ad
-    pure (g, PBridge a b, d)
+    pure (g, PMinus a b, d)
   inferConsumer (UMatchPair x y abg_to_d) = do
     (abg, d) <- inferCmd abg_to_d
     (a, bg) <- pullVarFromGamma x abg

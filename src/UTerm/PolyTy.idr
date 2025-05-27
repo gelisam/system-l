@@ -31,8 +31,8 @@ PolyImp : PolyTy -> PolyTy -> PolyTy
 PolyImp a b = Ctor (ImpF a b)
 
 public export
-PolyBridge : PolyTy -> PolyTy -> PolyTy
-PolyBridge a b = Ctor (BridgeF a b)
+PolyMinus : PolyTy -> PolyTy -> PolyTy
+PolyMinus a b = Ctor (MinusF a b)
 
 public export
 PolyTen : PolyTy -> PolyTy -> PolyTy
@@ -67,9 +67,9 @@ implementation Show PolyTy where
   showPrec p (Ctor (ImpF a b))
     = showParens (p /= Open)
     $ "Imp " ++ showPrec App a ++ " " ++ showPrec App b
-  showPrec p (Ctor (BridgeF a b))
+  showPrec p (Ctor (MinusF a b))
     = showParens (p /= Open)
-    $ "Bridge " ++ showPrec App a ++ " " ++ showPrec App b
+    $ "Minus " ++ showPrec App a ++ " " ++ showPrec App b
   showPrec p (Ctor (TenF a b))
     = showParens (p /= Open)
     $ "Ten " ++ showPrec App a ++ " " ++ showPrec App b
@@ -90,7 +90,7 @@ implementation Eq PolyTy where
   Ctor (ImpF a1 b1) == Ctor (ImpF a2 b2)
     = a1 == a2
    && b1 == b2
-  Ctor (BridgeF a1 b1) == Ctor (BridgeF a2 b2)
+  Ctor (MinusF a1 b1) == Ctor (MinusF a2 b2)
     = a1 == a2
    && b1 == b2
   Ctor (TenF a1 b1) == Ctor (TenF a2 b2)

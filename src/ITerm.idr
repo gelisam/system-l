@@ -38,7 +38,7 @@ mutual
        : (a, b : Ty)
       -> ICmd (a::g) (b::d)
       -> IProducer g (Imp a b) d
-    IConnect
+    IGap
        : (a, b : Ty)
       -> (gg' : List Ty)
       -> Cover g g' gg'
@@ -46,7 +46,7 @@ mutual
       -> Cover d d' dd'
       -> IConsumer g a d
       -> IProducer g' b d'
-      -> IProducer gg' (Bridge a b) dd'
+      -> IProducer gg' (Minus a b) dd'
     IPair
        : (a, b : Ty)
       -> (gg' : List Ty)
@@ -93,10 +93,10 @@ mutual
       -> IProducer g a d
       -> IConsumer g' b d'
       -> IConsumer gg' (Imp a b) dd'
-    IMatchBridge
+    IFillGap
        : (a, b : Ty)
       -> ICmd (b :: g) (a :: d)
-      -> IConsumer g (Bridge a b) d
+      -> IConsumer g (Minus a b) d
     IMatchPair
        : (a, b : Ty)
       -> ICmd (a::b::g) d

@@ -31,7 +31,7 @@ mutual
       -> String
       -> UCmd
       -> UProducer
-    UConnect
+    UGap
        : UConsumer
       -> UProducer
       -> UProducer
@@ -68,7 +68,7 @@ mutual
        : UProducer
       -> UConsumer
       -> UConsumer
-    UMatchBridge
+    UFillGap
        : String
       -> String
       -> UCmd
@@ -111,9 +111,9 @@ mutual
   showUProducer p (ULam x y cmd)
     = showParens (p /= Open)
     $ "ULam " ++ showPrec App x ++ " " ++ showPrec App y ++ " " ++ showUCmd App cmd
-  showUProducer p (UConnect consumer producer)
+  showUProducer p (UGap consumer producer)
     = showParens (p /= Open)
-    $ "UConnect " ++ showUConsumer App consumer ++ " " ++ showUProducer App producer
+    $ "UGap " ++ showUConsumer App consumer ++ " " ++ showUProducer App producer
   showUProducer p (UPair producer1 producer2)
     = showParens (p /= Open)
     $ "UPair " ++ showUProducer App producer1 ++ " " ++ showUProducer App producer2
@@ -140,9 +140,9 @@ mutual
   showUConsumer p (UApp producer consumer)
     = showParens (p /= Open)
     $ "UApp " ++ showUProducer App producer ++ " " ++ showUConsumer App consumer
-  showUConsumer p (UMatchBridge x y cmd)
+  showUConsumer p (UFillGap x y cmd)
     = showParens (p /= Open)
-    $ "UMatchBridge " ++ showPrec App x ++ " " ++ showPrec App y ++ " " ++ showUCmd App cmd
+    $ "UFillGap " ++ showPrec App x ++ " " ++ showPrec App y ++ " " ++ showUCmd App cmd
   showUConsumer p (UMatchPair x y cmd)
     = showParens (p /= Open)
     $ "UMatchPair " ++ showPrec App x ++ " " ++ showPrec App y ++ " " ++ showUCmd App cmd

@@ -207,7 +207,7 @@ mutual
   unifyCTysImpl (ImpF a1 b1) (ImpF a2 b2) = do
     unifyPTysImpl a1 a2
     unifyPTysImpl b1 b2
-  unifyCTysImpl (BridgeF a1 b1) (BridgeF a2 b2) = do
+  unifyCTysImpl (MinusF a1 b1) (MinusF a2 b2) = do
     unifyPTysImpl a1 a2
     unifyPTysImpl b1 b2
   unifyCTysImpl (TenF a1 b1) (TenF a2 b2) = do

@@ -43,8 +43,8 @@ PImp : PTy -> PTy -> PTy
 PImp a b = Ctor (ImpF a b)
 
 public export
-PBridge : PTy -> PTy -> PTy
-PBridge a b = Ctor (BridgeF a b)
+PMinus : PTy -> PTy -> PTy
+PMinus a b = Ctor (MinusF a b)
 
 public export
 PTen : PTy -> PTy -> PTy
@@ -89,9 +89,9 @@ implementation Show PTy where
   showPrec p (Ctor (ImpF a b))
     = showParens (p /= Open)
     $ "Imp " ++ showPrec App a ++ " " ++ showPrec App b
-  showPrec p (Ctor (BridgeF a b))
+  showPrec p (Ctor (MinusF a b))
     = showParens (p /= Open)
-    $ "Bridge " ++ showPrec App a ++ " " ++ showPrec App b
+    $ "Minus " ++ showPrec App a ++ " " ++ showPrec App b
   showPrec p (Ctor (TenF a b))
     = showParens (p /= Open)
     $ "Ten " ++ showPrec App a ++ " " ++ showPrec App b
@@ -112,7 +112,7 @@ implementation Eq PTy where
   Ctor (ImpF a1 b1) == Ctor (ImpF a2 b2)
     = a1 == a2
    && b1 == b2
-  Ctor (BridgeF a1 b1) == Ctor (BridgeF a2 b2)
+  Ctor (MinusF a1 b1) == Ctor (MinusF a2 b2)
     = a1 == a2
    && b1 == b2
   Ctor (TenF a1 b1) == Ctor (TenF a2 b2)
