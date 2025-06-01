@@ -305,19 +305,29 @@ test3 = printLn ( (runInferCmd $ uapply "f" "a" "b")
 public export
 icurry
    : {a, b, c : Ty}
-  -> ICmd [a, b] [c]
-  -> IProducer [] (Imp a (Imp b c)) []
-icurry {a} {b} {c} cmd
-  = ILam
-      a (Imp b c)
-      (iproduce
-        [Imp b c] Here
-        (ILam
-          b c
-          (the (ICmd [b, a] [c])
-            (ibringVarToFront
-              [b, a] (There Here)
-              cmd))))
+  -> ICmd [Imp (Ten a b) c] [Imp a (Imp b c)]
+icurry {a} {b} {c}
+  = iproduce
+      [Imp a (Imp b c)] Here
+      (ILam
+        a (Imp b c)
+        (iproduce
+          [Imp b c] Here
+          (ILam
+            b c
+            (iconsume
+              [b, a, Imp (Ten a b) c] (There (There Here))
+              (IApp
+                (Ten a b) c
+                [b, a] (PickLeft $ PickLeft Nil)
+                [c] (PickRight Nil)
+                (IPair
+                  a b
+                  [b, a] (PickRight $ PickLeft Nil)
+                  [] Nil
+                  (IVar a)
+                  (IVar b))
+                (ICoVar c))))))
 
 public export
 ucurry
@@ -325,12 +335,23 @@ ucurry
   -> String
   -> String
   -> UCmd
-  -> UProducer
-ucurry a b c cmd
-  = ULam a "b2c"
-      (uproduce "b2c"
-        (ULam b c
-          cmd))
+ucurry a b c
+  = uproduce "a2b2c"
+      (ULam a "b2c"
+        (uproduce "b2c"
+          (ULam b c
+            (uconsume "ab2c"
+              (UApp
+                (UPair (UVar a) (UVar b))
+                (UCoVar c))))))
+
+public export
+test4 : IO ()
+test4 = printLn ( (runInferCmd $ ucurry "a" "b" "c")
+               == Right ( [("ab2c", PolyImp (PolyTen (QVar 0) (QVar 1)) (QVar 2))]
+                        , [("a2b2c", PolyImp (QVar 0) (PolyImp (QVar 1) (QVar 2)))]
+                        )
+                )
 
 ----------------------------------------
 
@@ -480,8 +501,8 @@ ulocalCompletenessOfImp
             (UCoVar "b"))))
 
 public export
-test4 : IO ()
-test4 = printLn ( (runInferCmd $ ulocalCompletenessOfImp)
+test5 : IO ()
+test5 = printLn ( (runInferCmd $ ulocalCompletenessOfImp)
                == Right ( [("in", PolyImp (QVar 0) (QVar 1))]
                         , [("out", PolyImp (QVar 0) (QVar 1))]
                         )
@@ -518,8 +539,8 @@ ulocalCompletenessOfMinus
             (UCoVar "b"))))
 
 public export
-test5 : IO ()
-test5 = printLn ( (runInferCmd $ ulocalCompletenessOfMinus)
+test6 : IO ()
+test6 = printLn ( (runInferCmd $ ulocalCompletenessOfMinus)
                == Right ( [("in", PolyMinus (QVar 0) (QVar 1))]
                         , [("out", PolyMinus (QVar 0) (QVar 1))]
                         )
@@ -560,8 +581,8 @@ ulocalCompletenessOfTen
             (UVar "b"))))
 
 public export
-test6 : IO ()
-test6 = printLn ( (runInferCmd $ ulocalCompletenessOfTen)
+test7 : IO ()
+test7 = printLn ( (runInferCmd $ ulocalCompletenessOfTen)
                == Right ( [("in", PolyTen (QVar 0) (QVar 1))]
                         , [("out", PolyTen (QVar 0) (QVar 1))]
                         )
@@ -609,8 +630,8 @@ ulocalCompletenessOfSum
             (URight (UVar "b")))))
 
 public export
-test7 : IO ()
-test7 = printLn ( (runInferCmd $ ulocalCompletenessOfSum)
+test8 : IO ()
+test8 = printLn ( (runInferCmd $ ulocalCompletenessOfSum)
                == Right ( [("in", PolySum (QVar 0) (QVar 1))]
                         , [("out", PolySum (QVar 0) (QVar 1))]
                         )
@@ -658,8 +679,8 @@ ulocalCompletenessOfWith
             (USnd (UCoVar "b")))))
 
 public export
-test8 : IO ()
-test8 = printLn ( (runInferCmd $ ulocalCompletenessOfWith)
+test9 : IO ()
+test9 = printLn ( (runInferCmd $ ulocalCompletenessOfWith)
                == Right ( [("in", PolyWith (QVar 0) (QVar 1))]
                         , [("out", PolyWith (QVar 0) (QVar 1))]
                         )
@@ -697,8 +718,8 @@ ulocalCompletenessOfPar
             (UCoVar "b"))))
 
 public export
-test9 : IO ()
-test9 = printLn ( (runInferCmd $ ulocalCompletenessOfPar)
+test10 : IO ()
+test10 = printLn ( (runInferCmd $ ulocalCompletenessOfPar)
                == Right ( [("in", PolyPar (QVar 0) (QVar 1))]
                         , [("out", PolyPar (QVar 0) (QVar 1))]
                         )

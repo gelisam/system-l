@@ -58,4 +58,5 @@ main = do
   putStr "Examples.test7:        "; Examples.test7
   putStr "Examples.test8:        "; Examples.test8
   putStr "Examples.test9:        "; Examples.test9
+  putStr "Examples.test10:       "; Examples.test10
   putStrLn "*** tests pass if no False is shown above ***"
