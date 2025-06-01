@@ -337,14 +337,14 @@ public export
 icurryMinus
    : {a, b, c : Ty}
   -> ICmd [a] [b, c]
-  -> IConsumer [] (Minus c (Minus b a)) []
+  -> IConsumer [] (Minus (Minus a b) c) []
 icurryMinus {a} {b} {c} cmd
   = IFillGap
-      c (Minus b a)
+      (Minus a b) c
       (iconsume
-        [Minus b a] Here
+        [Minus a b] Here
         (IFillGap
-          b a
+          a b
           cmd))
 
 public export
@@ -356,11 +356,11 @@ ucurryMinus
   -> UConsumer
 ucurryMinus a b c cmd
   = UFillGap
-      c "bMinusA"
+      "aMinusB" c
       (uconsume
-        "bMinusA"
+        "aMinusB"
         (UFillGap
-          b a
+          a b
           cmd))
 
 ----------------------------------------
@@ -368,25 +368,25 @@ ucurryMinus a b c cmd
 public export
 iuncurryMinus
    : {a, b, c : Ty}
-  -> IConsumer [] (Minus c (Minus b a)) []
+  -> IConsumer [] (Minus (Minus a b) c) []
   -> ICmd [a] [b, c]
-iuncurryMinus {a} {b} {c} cCMinusBMinusA
+iuncurryMinus {a} {b} {c} cAMinusBMinusC
   = ICut
-      (Minus c (Minus b a))
+      (Minus (Minus a b) c)
       [a] allLeft
       [b, c] allLeft
       (IGap
-        c (Minus b a)
-        [a] allRight
-        [b, c] (PickRight $ PickLeft Nil)
-        (ICoVar c)
+        (Minus a b) c
+        [a] allLeft
+        [b, c] (PickLeft $ PickRight Nil)
         (IGap
-          b a
-          [a] allRight
-          [b] allLeft
-          (ICoVar b)
-          (IVar a)))
-      cCMinusBMinusA
+          a b
+          [a] allLeft
+          [b] allRight
+          (IVar a)
+          (ICoVar b))
+        (ICoVar c))
+      cAMinusBMinusC
 
 public export
 uuncurryMinus
@@ -395,14 +395,14 @@ uuncurryMinus
   -> String
   -> UConsumer
   -> UCmd
-uuncurryMinus a b c cCMinusBMinusA
+uuncurryMinus a b c cAMinusBMinusC
   = UCut
       (UGap
-        (UCoVar c)
         (UGap
-          (UCoVar b)
-          (UVar a)))
-      cCMinusBMinusA
+          (UVar a)
+          (UCoVar b))
+        (UCoVar c))
+      cAMinusBMinusC
 
 ----------------------------------------
 
@@ -456,13 +456,13 @@ ilocalCompletenessOfMinus {a} {b}
       (IFillGap
         a b
         (iproduce
-          [a, Minus a b] (There Here)
+          [b, Minus a b] (There Here)
           (IGap
             a b
-            [b] allRight
             [a] allLeft
-            (ICoVar a)
-            (IVar b))))
+            [b] allRight
+            (IVar a)
+            (ICoVar b))))
 
 ulocalCompletenessOfMinus
    : UCmd
@@ -472,8 +472,8 @@ ulocalCompletenessOfMinus
         "a" "b"
         (uproduce "out"
           (UGap
-            (UCoVar "a")
-            (UVar "b"))))
+            (UVar "a")
+            (UCoVar "b"))))
 
 public export
 test4 : IO ()

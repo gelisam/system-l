@@ -32,8 +32,8 @@ mutual
       -> UCmd
       -> UProducer
     UGap
-       : UConsumer
-      -> UProducer
+       : UProducer
+      -> UConsumer
       -> UProducer
     UPair
        : UProducer
@@ -111,9 +111,9 @@ mutual
   showUProducer p (ULam x y cmd)
     = showParens (p /= Open)
     $ "ULam " ++ showPrec App x ++ " " ++ showPrec App y ++ " " ++ showUCmd App cmd
-  showUProducer p (UGap consumer producer)
+  showUProducer p (UGap producer consumer)
     = showParens (p /= Open)
-    $ "UGap " ++ showUConsumer App consumer ++ " " ++ showUProducer App producer
+    $ "UGap " ++ showUProducer App producer ++ " " ++ showUConsumer App consumer
   showUProducer p (UPair producer1 producer2)
     = showParens (p /= Open)
     $ "UPair " ++ showUProducer App producer1 ++ " " ++ showUProducer App producer2
