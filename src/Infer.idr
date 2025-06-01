@@ -281,7 +281,7 @@ mutual
     a <- liftUnifyTy $ newUVarTy
     (g, b, d) <- inferConsumer consumerB
     pure (g, PWith a b, d)
-  inferConsumer (UHandlePar consumerA consumerB) = do
+  inferConsumer (USplitPar consumerA consumerB) = do
     (g, a, d) <- inferConsumer consumerA
     (g', b, d') <- inferConsumer consumerB
     gg' <- mergeDisjointContexts g g'

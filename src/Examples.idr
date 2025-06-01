@@ -636,7 +636,7 @@ ilocalCompletenessOfPar {a} {b}
         a b
         (iconsume
           [Par a b] Here
-          (IHandlePar
+          (ISplitPar
             a b
             [] Nil
             [a, b] (PickLeft $ PickRight Nil)
@@ -650,7 +650,7 @@ ulocalCompletenessOfPar
   = uproduce "out"
       (UCoMatchPar "a" "b"
         (uconsume "in"
-          (UHandlePar
+          (USplitPar
             (UCoVar "a")
             (UCoVar "b"))))
 

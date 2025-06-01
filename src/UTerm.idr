@@ -88,7 +88,7 @@ mutual
     USnd
        : UConsumer
       -> UConsumer
-    UHandlePar
+    USplitPar
        : UConsumer
       -> UConsumer
       -> UConsumer
@@ -155,9 +155,9 @@ mutual
   showUConsumer p (USnd consumerB)
     = showParens (p /= Open)
     $ "USnd " ++ showUConsumer App consumerB
-  showUConsumer p (UHandlePar consumerA consumerB)
+  showUConsumer p (USplitPar consumerA consumerB)
     = showParens (p /= Open)
-    $ "UHandlePar " ++ showUConsumer App consumerA ++ " " ++ showUConsumer App consumerB
+    $ "USplitPar " ++ showUConsumer App consumerA ++ " " ++ showUConsumer App consumerB
 
 public export
 implementation Show UCmd where

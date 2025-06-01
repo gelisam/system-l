@@ -114,7 +114,7 @@ mutual
        : (b : Ty)
       -> IConsumer g b d
       -> IConsumer g (With a b) d
-    IHandlePar
+    ISplitPar
        : (a, b : Ty)
       -> (gg' : List Ty)
       -> Cover g g' gg'
