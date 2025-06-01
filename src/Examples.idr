@@ -169,6 +169,48 @@ ibringVarToFront {a} g aElemG cmd
 
 ----------------------------------------
 
+-- specialized version of 'ibringVarToFront' from the README
+public export
+iswap
+   : {a, b : Ty}
+  -> ICmd [Ten a b] [Ten b a]
+iswap {a} {b}
+  = iconsume
+      [Ten a b] Here
+      (IMatchPair
+        a b
+        (iproduce
+          [Ten b a] Here
+          (IPair
+            b a
+            [a, b] (PickRight $ PickLeft Nil)
+            [] Nil
+            (IVar b)
+            (IVar a))))
+
+public export
+uswap
+   : String
+  -> String
+  -> UCmd
+uswap in_ out
+  = uconsume in_
+      (UMatchPair "x" "y"
+        (uproduce out
+          (UPair
+            (UVar "y")
+            (UVar "x"))))
+
+public export
+test2 : IO ()
+test2 = printLn ( (runInferCmd $ uswap "in" "out")
+               == Right ( [("in", PolyTen (QVar 0) (QVar 1))]
+                        , [("out", PolyTen (QVar 1) (QVar 0))]
+                        )
+                )
+
+----------------------------------------
+
 public export
 ibringCoVarToFront
    : {a : Ty}
@@ -248,8 +290,8 @@ uapply f in_ out
         (UCoVar out))
 
 public export
-test2 : IO ()
-test2 = printLn ( (runInferCmd $ uapply "f" "a" "b")
+test3 : IO ()
+test3 = printLn ( (runInferCmd $ uapply "f" "a" "b")
                == Right ( [ ("a", QVar 0)
                           , ("f", PolyImp (QVar 0) (QVar 1))
                           ]
@@ -438,8 +480,8 @@ ulocalCompletenessOfImp
             (UCoVar "b"))))
 
 public export
-test3 : IO ()
-test3 = printLn ( (runInferCmd $ ulocalCompletenessOfImp)
+test4 : IO ()
+test4 = printLn ( (runInferCmd $ ulocalCompletenessOfImp)
                == Right ( [("in", PolyImp (QVar 0) (QVar 1))]
                         , [("out", PolyImp (QVar 0) (QVar 1))]
                         )
@@ -476,8 +518,8 @@ ulocalCompletenessOfMinus
             (UCoVar "b"))))
 
 public export
-test4 : IO ()
-test4 = printLn ( (runInferCmd $ ulocalCompletenessOfMinus)
+test5 : IO ()
+test5 = printLn ( (runInferCmd $ ulocalCompletenessOfMinus)
                == Right ( [("in", PolyMinus (QVar 0) (QVar 1))]
                         , [("out", PolyMinus (QVar 0) (QVar 1))]
                         )
@@ -518,8 +560,8 @@ ulocalCompletenessOfTen
             (UVar "b"))))
 
 public export
-test5 : IO ()
-test5 = printLn ( (runInferCmd $ ulocalCompletenessOfTen)
+test6 : IO ()
+test6 = printLn ( (runInferCmd $ ulocalCompletenessOfTen)
                == Right ( [("in", PolyTen (QVar 0) (QVar 1))]
                         , [("out", PolyTen (QVar 0) (QVar 1))]
                         )
@@ -567,8 +609,8 @@ ulocalCompletenessOfSum
             (URight (UVar "b")))))
 
 public export
-test6 : IO ()
-test6 = printLn ( (runInferCmd $ ulocalCompletenessOfSum)
+test7 : IO ()
+test7 = printLn ( (runInferCmd $ ulocalCompletenessOfSum)
                == Right ( [("in", PolySum (QVar 0) (QVar 1))]
                         , [("out", PolySum (QVar 0) (QVar 1))]
                         )
@@ -616,8 +658,8 @@ ulocalCompletenessOfWith
             (USnd (UCoVar "b")))))
 
 public export
-test7 : IO ()
-test7 = printLn ( (runInferCmd $ ulocalCompletenessOfWith)
+test8 : IO ()
+test8 = printLn ( (runInferCmd $ ulocalCompletenessOfWith)
                == Right ( [("in", PolyWith (QVar 0) (QVar 1))]
                         , [("out", PolyWith (QVar 0) (QVar 1))]
                         )
@@ -655,8 +697,8 @@ ulocalCompletenessOfPar
             (UCoVar "b"))))
 
 public export
-test8 : IO ()
-test8 = printLn ( (runInferCmd $ ulocalCompletenessOfPar)
+test9 : IO ()
+test9 = printLn ( (runInferCmd $ ulocalCompletenessOfPar)
                == Right ( [("in", PolyPar (QVar 0) (QVar 1))]
                         , [("out", PolyPar (QVar 0) (QVar 1))]
                         )
