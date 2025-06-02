@@ -1,5 +1,5 @@
 \documentclass{article}
-\usepackage[paperwidth=4.5in,paperheight=1.4in,margin=0.1in]{geometry}
+\usepackage[paperwidth=4.6in,paperheight=1.4in,margin=0.1in]{geometry}
 \usepackage{mathtools}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -36,9 +36,9 @@
       }
       {\langle (A \otimes B) \to C \rangle; a : A, b : B \vdash \text{apply}\;(\text{pair}\;a\;b)\;\overline{c} \vdash \overline{c} : C}
     }
-    {f : (A \otimes B) \to C, a : A \vdash \lambda b\,\overline{c}.\,(\text{apply}\;(\text{pair}\;a\;b)\;\overline{c}) \vdash \langle B \to C \rangle; \cdot}
+    {ab2c : (A \otimes B) \to C, a : A \vdash \lambda b\,\overline{c}.\,(\text{apply}\;(\text{pair}\;a\;b)\;\overline{c}) \vdash \langle B \to C \rangle; \cdot}
   }
-  {f : (A \otimes B) \to C \vdash \lambda a\,\overline{bc}.\,\lambda b\,\overline{c}.\,(\text{apply}\;(\text{pair}\;a\;b)\;\overline{c}) \vdash \langle A \to (B \to C) \rangle; \cdot}
+  {ab2c : (A \otimes B) \to C \vdash \lambda a\,\overline{bc}.\,\lambda b\,\overline{c}.\,(\text{apply}\;(\text{pair}\;a\;b)\;\overline{c}) \vdash \langle A \to (B \to C) \rangle; \cdot}
 \]
 
 \end{document}
