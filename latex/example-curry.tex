@@ -1,0 +1,51 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{trfrac}
+
+\def\with{\mathbin{\&}}
+\def\parr{\mathbin{\raisebox{-0.25ex}{\rotatebox[origin=c]{180}{\&}}}}
+
+\begin{document}
+
+\noindent
+{\huge \textbf{System L: Curry Function Example}}
+
+\section{Curry Function}
+
+\noindent
+\[\arraycolsep=0em
+\begin{array}{c}
+  \trfrac
+  {
+    \trfrac
+    {
+      \trfrac
+      {
+        \trfrac
+        {
+          \trfrac
+          {}
+          {a : A \vdash a \vdash \langle A \rangle; \cdot}
+          \qquad
+          \trfrac
+          {}
+          {b : B \vdash b \vdash \langle B \rangle; \cdot}
+        }
+        {a : A, b : B \vdash \text{pair}\;a\;b \vdash \langle A \otimes B \rangle; \cdot}
+        \qquad
+        \trfrac
+        {}
+        {\langle C \rangle; \cdot \vdash \overline{c} \vdash \overline{c} : C}
+      }
+      {\langle (A \otimes B) \to C \rangle; a : A, b : B \vdash \text{apply}\;(\text{pair}\;a\;b)\;\overline{c} \vdash \overline{c} : C}
+    }
+    {f : (A \otimes B) \to C, a : A \vdash \lambda b\,\overline{c}.\,(\text{apply}\;(\text{pair}\;a\;b)\;\overline{c}) \vdash \langle B \to C \rangle; \cdot}
+  }
+  {f : (A \otimes B) \to C \vdash \lambda a\,\overline{bc}.\,\lambda b\,\overline{c}.\,(\text{apply}\;(\text{pair}\;a\;b)\;\overline{c}) \vdash \langle A \to (B \to C) \rangle; \cdot}
+\end{array}
+\]
+
+\end{document}

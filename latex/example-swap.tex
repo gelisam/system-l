@@ -1,0 +1,70 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{trfrac}
+
+\def\with{\mathbin{\&}}
+\def\parr{\mathbin{\raisebox{-0.25ex}{\rotatebox[origin=c]{180}{\&}}}}
+
+\begin{document}
+
+\noindent
+{\huge \textbf{System L: Swap Function Example}}
+
+\section{Swap Function}
+
+\noindent
+\[
+  \trfrac
+  {
+    in : A \otimes B \vdash in \vdash \langle A \otimes B \rangle; \cdot
+    \qquad
+    \trfrac
+    {
+      \trfrac
+      {
+        \trfrac
+        {
+          \trfrac
+          {}
+          {y : B \vdash y \vdash \langle B \rangle; \cdot}
+          \qquad
+          \trfrac
+          {}
+          {x : A \vdash x \vdash \langle A \rangle; \cdot}
+        }
+        {x : A, y : B \vdash \text{pair}\;y\;x \vdash \langle B \otimes A \rangle; \cdot}
+        \quad
+        {\langle B \otimes A \rangle; \cdot \vdash \overline{out} \vdash \overline{out} : B \otimes A}
+      }
+      {x : A, y : B \vdash \text{cut}\;(\text{pair}\;y\;x)\;\overline{out} \vdash \overline{out} : B \otimes A}
+    }
+    {\langle A \otimes B \rangle; \cdot \vdash \text{match-pair}\,x\,y.\,\text{cut}\;(\text{pair}\;y\;x)\;\overline{out} \vdash \overline{out} : B \otimes A}
+  }
+  {in : A \otimes B \vdash \text{cut}\;in\;(\text{match-pair}\,x\,y.\,\text{cut}\;(\text{pair}\;y\;x)\;\overline{out}) \vdash \overline{out} : B \otimes A}
+\]
+
+The derivation trees for this language are very verbose, so for succinctness, let's omit the cut rules.
+
+\noindent
+\[
+  \trfrac
+  {
+    \trfrac
+    {
+      \trfrac
+      {}
+      {y : B \vdash y \vdash \langle B \rangle; \cdot}
+      \qquad
+      \trfrac
+      {}
+      {x : A \vdash x \vdash \langle A \rangle; \cdot}
+    }
+    {x : A, y : B \vdash \text{pair}\;y\;x \vdash \langle B \otimes A \rangle; \cdot}
+  }
+  {\langle A \otimes B \rangle; \cdot \vdash \text{match-pair}\,x\,y.\,(\text{pair}\;y\;x) \vdash \overline{out} : B \otimes A}
+\]
+
+\end{document}

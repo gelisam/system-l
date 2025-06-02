@@ -1,0 +1,77 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\def\with{\mathbin{\&}}
+\def\parr{\mathbin{\raisebox{-0.25ex}{\rotatebox[origin=c]{180}{\&}}}}
+
+\begin{document}
+
+\noindent
+{\huge \textbf{System L: Syntax}}
+
+\section{Syntax}
+
+\noindent
+\[\arraycolsep=1.4pt
+\begin{array}{rlrlrl}
+  c ::= & \text{cut}\;e\;\bar{e}
+  \vspace{1ex}\\
+  e ::= & x
+  &
+  \bar{e}
+    ::= & \bar{x}
+  \\
+  \mid & \mu\,\bar{x}.\,c
+  &
+  \mid & \bar{\mu}\,x.\,c
+  \\
+  \mid & \text{lambda}\,x\,\bar{y}.\,c
+  &
+  \mid & \text{apply-lambda}\;e\;\bar{e}
+  &
+  \hspace{1em}
+  \tau ::= & \tau \to \tau
+  \\
+  \mid & \text{gap}\;e\;\bar{e}
+  &
+  \mid & \text{match-gap}\,\bar{x}\,y.\,c
+  &
+  \mid & \tau - \tau
+  \\
+  \mid & \text{pair}\;e\;e
+  &
+  \mid & \text{match-pair}\,x\,y.\,c
+  &
+  \mid & \tau \otimes \tau
+  \\
+  \mid & \text{left}\;e \mid \text{right}\;e
+  &
+  \mid & \text{match-sum}\;\bar{e}\;\bar{e}
+  &
+  \mid & \tau \oplus \tau
+  \\
+  \mid & \text{comatch-with}\;e\;e
+  &
+  \mid & \text{fst}\;\bar{e} \mid \text{snd}\;\bar{e}
+  &
+  \mid & \tau \with \tau
+  \\
+  \mid & \text{comatch-par}\,x\,y.\,c
+  &
+  \mid & \text{split-par}\;\bar{e}\;\bar{e}
+  &
+  \mid & \tau \parr \tau
+  \vspace{1ex}\\
+  \Gamma ::= & \cdot
+          \mid \Gamma, x : \tau
+  &
+  \bar{\Gamma}
+         ::= & \cdot
+          \mid \bar{\Gamma}, \bar{x} : \tau
+\end{array}
+\]
+
+\end{document}
