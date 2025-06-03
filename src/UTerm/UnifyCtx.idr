@@ -123,39 +123,14 @@ implementation Monad m => MonadObserveCtx (UnifyCtxT m) where
 
 ----------------------------------------
 
--- Creates a new open context (allows adding more variables).
 public export
-newUVarCtx : Monad m => UnifyCtxT m UVarCtx
-newUVarCtx = MkUnifyCtxT $ do
+newUVarCtxImpl : Monad m => Impl m UVarCtx
+newUVarCtxImpl = do
   liftUnionFind $ newNode $ Just $ MkPContext
     { varsSoFar
         = Map.empty
     , closed
         = False
-    }
-
--- Creates an open context with initial variables.
--- More variables can be added later.
-public export
-newOpenUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
-newOpenUVarCtx vars = MkUnifyCtxT $ do
-  liftUnionFind $ newNode $ Just $ MkPContext
-    { varsSoFar
-        = vars
-    , closed
-        = False
-    }
-
--- Creates a closed context with exactly the specified variables.
--- No more variables can be added later.
-public export
-newClosedUVarCtx : Monad m => Map String PTy -> UnifyCtxT m UVarCtx
-newClosedUVarCtx vars = MkUnifyCtxT $ do
-  liftUnionFind $ newNode $ Just $ MkPContext
-    { varsSoFar
-        = vars
-    , closed
-        = True
     }
 
 getPContextImpl
@@ -202,17 +177,6 @@ insertImpl uvarCtx x pty = do
         , closed = closed
         }
 
--- Similar to Map.insert. Fails if the context is closed.
-public export
-insert
-   : Monad m
-  => UVarCtx
-  -> String
-  -> PTy
-  -> UnifyCtxT m ()
-insert uvarCtx x pty = MkUnifyCtxT $ do
-  insertImpl uvarCtx x pty
-
 closeImpl
    : Monad m
   => UVarCtx
@@ -226,22 +190,13 @@ closeImpl uvarCtx = do
     , closed = True
     }
 
--- Closes a context, preventing further variables from being added.
 public export
-close
-   : Monad m
-  => UVarCtx
-  -> UnifyCtxT m ()
-close uvarCtx = MkUnifyCtxT $ do
-  closeImpl uvarCtx
-
-public export
-unifyUVarCtxs
+unifyUVarCtxsImpl
    : Monad m
   => UVarCtx
   -> UVarCtx
-  -> UnifyCtxT m ()
-unifyUVarCtxs uvarCtx1 uvarCtx2 = MkUnifyCtxT $ do
+  -> Impl m ()
+unifyUVarCtxsImpl uvarCtx1 uvarCtx2 = do
   -- Get the context information for both contexts
   MkPContext varsSoFar1 closed1 <- getPContextImpl uvarCtx1
   MkPContext varsSoFar2 closed2 <- getPContextImpl uvarCtx2
@@ -265,6 +220,85 @@ showUnifyCtxError (ContextCannotHaveVariable (MkNode i) var) =
   "Context ??" ++ show i ++ " cannot have variable " ++ show var
 showUnifyCtxError (UnifyTyError e) =
   showUnifyTyError e
+
+----------------------------------------
+
+public export
+interface (MonadUnifyTy m, MonadObserveCtx m) => MonadUnifyCtx m where
+  -- Creates a new open context (allows adding more variables).
+  newUVarCtx
+    : m UVarCtx
+
+  -- Similar to Map.insert. Fails if the context is closed.
+  insert
+    : UVarCtx -> String -> PTy -> m ()
+
+  -- Closes a context, preventing further variables from being added.
+  close
+    : UVarCtx -> m ()
+  
+  -- Unifies two contexts, merging their variables and types. Fails if that
+  -- would add variables to a closed context.
+  unifyUVarCtxs
+    : UVarCtx -> UVarCtx -> m ()
+
+-- Creates an open context with initial variables.
+-- More variables can be added later.
+public export
+newOpenUVarCtx
+   : MonadUnifyCtx m
+  => Map String PTy
+  -> m UVarCtx
+newOpenUVarCtx vars = do
+  uvarCtx <- newUVarCtx
+  for_ (Map.toList vars) $ \(x, pty) => do
+    insert uvarCtx x pty
+  pure uvarCtx
+
+-- Creates a closed context with exactly the specified variables.
+-- No more variables can be added later.
+public export
+newClosedUVarCtx
+   : MonadUnifyCtx m
+  => Map String PTy
+  -> m UVarCtx
+newClosedUVarCtx vars = do
+  uvarCtx <- newOpenUVarCtx vars
+  close uvarCtx
+  pure uvarCtx
+
+public export
+implementation Monad m => MonadUnifyCtx (UnifyCtxT m) where
+  newUVarCtx = MkUnifyCtxT $ do
+    newUVarCtxImpl
+  insert uvarCtx x pty = MkUnifyCtxT $ do
+    insertImpl uvarCtx x pty
+  close uvarCtx = MkUnifyCtxT $ do
+    closeImpl uvarCtx
+  unifyUVarCtxs uvarCtx1 uvarCtx2 = MkUnifyCtxT $ do
+    unifyUVarCtxsImpl uvarCtx1 uvarCtx2
+
+public export
+implementation MonadUnifyCtx m => MonadUnifyCtx (StateT s m) where
+  newUVarCtx
+    = lift newUVarCtx
+  insert uvarCtx x pty
+    = lift $ insert uvarCtx x pty
+  close uvarCtx
+    = lift $ close uvarCtx
+  unifyUVarCtxs uvarCtx1 uvarCtx2
+    = lift $ unifyUVarCtxs uvarCtx1 uvarCtx2
+
+public export
+implementation MonadUnifyCtx m => MonadUnifyCtx (ExceptT e m) where
+  newUVarCtx
+    = lift newUVarCtx
+  insert uvarCtx x pty
+    = lift $ insert uvarCtx x pty
+  close uvarCtx
+    = lift $ close uvarCtx
+  unifyUVarCtxs uvarCtx1 uvarCtx2
+    = lift $ unifyUVarCtxs uvarCtx1 uvarCtx2
 
 ----------------------------------------
 
@@ -517,28 +551,3 @@ test7 = printLn ( runUnifyCtxWithoutGeneralizing example7
                   $ ContextCannotHaveVariable (MkNode 0) "y"
                   )
                 )
-
-----------------------------------------
-
-public export
-interface Monad m => MonadUnifyCtx m where
-  liftUnifyCtx : UnifyCtx a -> m a
-
-public export
-implementation Monad m => MonadUnifyCtx (UnifyCtxT m) where
-  liftUnifyCtx body = MkUnifyCtxT $ go body
-    where
-      go : UnifyCtx a -> Impl m a
-      go body = do
-        let body' = runUnifyCtxWithoutGeneralizing body
-        case body' of
-          Left e => throwE e
-          Right a => pure a
-
-public export
-implementation MonadUnifyCtx m => MonadUnifyCtx (StateT s m) where
-  liftUnifyCtx body = lift $ liftUnifyCtx body
-
-public export
-implementation MonadUnifyCtx m => MonadUnifyCtx (ExceptT e m) where
-  liftUnifyCtx body = lift $ liftUnifyCtx body
