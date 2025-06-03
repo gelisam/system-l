@@ -7,8 +7,8 @@
 -- as we learn more information about which variables are in the context,
 -- 'varsSoFar' gets filled with more and more variables. It is also possible to
 -- no longer be uncertain about which variables are in the context, at which
--- point we 'close' the PContext in order to indicate that no more variables can be
--- added.
+-- point we 'close' the PContext in order to indicate that no more variables can
+-- be added.
 --
 -- The only constraint which can be expressed in UnifyCtx is that two contexts
 -- are equal, via 'unifyUVarCtxs'. The "UnifyCtxWithConstraints" module makes it
@@ -21,6 +21,7 @@ import Data.SortedMap as Map
 import Data.SortedSet as Set
 
 import Ty
+import UTerm.ObserveCtx
 import UTerm.PolyTy
 import UTerm.PTy
 import UTerm.UnifyTy
@@ -29,7 +30,6 @@ import Util.ExceptT
 import Util.Map as Map
 import Util.MapT
 import Util.These
-import UTerm.ObserveCtx
 
 ----------------------------------------
 

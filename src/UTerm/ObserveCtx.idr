@@ -46,7 +46,7 @@ getPContextImpl
 getPContextImpl node = do
   (liftUnionFind $ getValue node) >>= \case
     Nothing => do
-      -- This module's API never stores Nothing, but to make the typechecker
+      -- MonadUnifyCtx's API never stores Nothing, but to make the typechecker
       -- happy, we need to pick a dummy value for the unlikely case in which
       -- this function is called with a value which was not obtained via this
       -- API.
