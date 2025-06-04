@@ -169,17 +169,17 @@ execTest body = do
 
 example1 : UnifyCtx (UnifyCtxWithLog ())
 example1 = do
-  uvarTy <- liftUnifyTy newUVarTy
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarCtx <- newUVarCtx  
   pure $ do
     -- Insert a new variable (should be logged)
-    insert uvarCtx "x" uvarTy
+    insert uvarCtx "x" uvarTy0
     
     -- Insert the same variable again (should not be logged)
-    insert uvarCtx "x" uvarTy
+    insert uvarCtx "x" uvarTy0
     
     -- Insert another new variable (should be logged)
-    insert uvarCtx "y" uvarTy
+    insert uvarCtx "y" uvarTy0
     
     -- Close the context (should be logged)
     close uvarCtx
@@ -199,13 +199,13 @@ test1 = printLn ( execTest example1
 
 example2 : UnifyCtx (UnifyCtxWithLog ())
 example2 = do
-  uvarTy <- liftUnifyTy newUVarTy
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarCtx <- newUVarCtx  
   pure $ do
     close uvarCtx
     
     -- insert after close is not allowed
-    insert uvarCtx "x" uvarTy
+    insert uvarCtx "x" uvarTy0
 
 public export
 test2 : IO ()

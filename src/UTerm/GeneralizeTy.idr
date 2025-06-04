@@ -130,13 +130,13 @@ generalizeTriple g pty d = do
 
 example1 : UnifyTy (GeneralizeTy PolyTy)
 example1 = do
+  uvar0 <- newUVarTy
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
   uvar3 <- newUVarTy
-  uvar4 <- newUVarTy
-  unifyPTys (PImp uvar1 uvar2) (PImp uvar2 uvar3)
+  unifyPTys (PImp uvar0 uvar1) (PImp uvar1 uvar2)
   pure $ do
-    generalizeType $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
+    generalizeType $ PImp uvar0 $ PImp uvar1 $ PImp uvar2 uvar3
 
 public export
 test1 : IO ()

@@ -263,12 +263,12 @@ implementation Eq UnifyTyError where
 
 example1 : UnifyTy PTy
 example1 = do
+  uvar0 <- newUVarTy
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
   uvar3 <- newUVarTy
-  uvar4 <- newUVarTy
-  unifyPTys (PImp uvar1 uvar2) (PImp uvar2 uvar3)
-  zonkPTy $ PImp uvar1 $ PImp uvar2 $ PImp uvar3 uvar4
+  unifyPTys (PImp uvar0 uvar1) (PImp uvar1 uvar2)
+  zonkPTy $ PImp uvar0 $ PImp uvar1 $ PImp uvar2 uvar3
 
 -- The algorithm doesn't guarantee which variable is chosen as the root, so what
 -- I really want to test is that there are two distinct nodes n1 and n2 such
@@ -290,11 +290,11 @@ test1 = printLn ( runUnifyTyWithoutGeneralizing example1
 
 example2 : UnifyTy ()
 example2 = do
+  uvar0 <- newUVarTy
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
-  uvar3 <- newUVarTy
 
-  unifyPTys (PImp uvar1 uvar2) (PPar uvar2 uvar3)
+  unifyPTys (PImp uvar0 uvar1) (PPar uvar1 uvar2)
 
 public export
 test2 : IO ()
@@ -308,13 +308,13 @@ test2 = printLn ( runUnifyTyWithoutGeneralizing example2
 
 example3 : UnifyTy (PTy, PTy)
 example3 = do
+  uvar0 <- newUVarTy
   uvar1 <- newUVarTy
-  uvar2 <- newUVarTy
 
-  unifyPTys uvar1 (PImp uvar1 uvar2)
+  unifyPTys uvar0 (PImp uvar0 uvar1)
 
-  pty1 <- zonkDepthPTy 3 uvar1
-  pty2 <- zonkDepthPTy 3 uvar2
+  pty1 <- zonkDepthPTy 3 uvar0
+  pty2 <- zonkDepthPTy 3 uvar1
   pure (pty1, pty2)
 
 
@@ -331,16 +331,16 @@ test3 = printLn ( runUnifyTyWithoutGeneralizing example3
 
 example4 : UnifyTy (PTy, PTy, PTy)
 example4 = do
+  uvar0 <- newUVarTy
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
-  uvar3 <- newUVarTy
 
-  unifyPTys (PImp uvar1 uvar2) uvar3
-  unifyPTys uvar1 uvar3
+  unifyPTys (PImp uvar0 uvar1) uvar2
+  unifyPTys uvar0 uvar2
 
-  pty1 <- zonkDepthPTy 3 uvar1
-  pty2 <- zonkDepthPTy 3 uvar2
-  pty3 <- zonkDepthPTy 3 uvar3
+  pty1 <- zonkDepthPTy 3 uvar0
+  pty2 <- zonkDepthPTy 3 uvar1
+  pty3 <- zonkDepthPTy 3 uvar2
   pure (pty1, pty2, pty3)
 
 
@@ -356,16 +356,16 @@ test4 = printLn ( runUnifyTyWithoutGeneralizing example4
 
 example5 : UnifyTy (PTy, PTy)
 example5 = do
+  uvar0 <- newUVarTy
   uvar1 <- newUVarTy
   uvar2 <- newUVarTy
-  uvar3 <- newUVarTy
 
-  unifyPTys uvar1 (PImp uvar2 uvar3)
-  unifyPTys uvar2 (PImp uvar1 uvar3)
-  unifyPTys uvar1 uvar2
+  unifyPTys uvar0 (PImp uvar1 uvar2)
+  unifyPTys uvar1 (PImp uvar0 uvar2)
+  unifyPTys uvar0 uvar1
 
-  pty1 <- zonkDepthPTy 3 uvar1
-  pty2 <- zonkDepthPTy 3 uvar2
+  pty1 <- zonkDepthPTy 3 uvar0
+  pty2 <- zonkDepthPTy 3 uvar1
   pure (pty1, pty2)
 
 

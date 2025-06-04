@@ -324,23 +324,23 @@ implementation Eq UnifyCtxError where
 
 example1 : UnifyCtx (Map String PTy, Map String PTy, Map String PTy, Map String PTy)
 example1 = do
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarTy1 <- liftUnifyTy newUVarTy
   uvarTy2 <- liftUnifyTy newUVarTy
   uvarTy3 <- liftUnifyTy newUVarTy
-  uvarTy4 <- liftUnifyTy newUVarTy
   uvarCtx1 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", PImp uvarTy1 uvarTy2)
-    , ("y", uvarTy3)
+    [ ("x", PImp uvarTy0 uvarTy1)
+    , ("y", uvarTy2)
     ]
   uvarCtx2 <- newUVarCtx
   uvarCtx3 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", PImp uvarTy2 uvarTy3)
-    , ("z", uvarTy4)
+    [ ("x", PImp uvarTy1 uvarTy2)
+    , ("z", uvarTy3)
     ]
   uvarCtx4 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", PTen uvarTy3 uvarTy4)
-    , ("y", uvarTy3)
-    , ("xyz", uvarTy4)
+    [ ("x", PTen uvarTy2 uvarTy3)
+    , ("y", uvarTy2)
+    , ("xyz", uvarTy3)
     ]
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
@@ -383,13 +383,13 @@ test1 = printLn ( runUnifyCtxWithoutGeneralizing example1
 
 example2 : UnifyCtx (Map String PTy, Map String PTy)
 example2 = do
-  uvarTy <- liftUnifyTy newUVarTy
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarCtx1 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", uvarTy)
+    [ ("x", uvarTy0)
     ]
   uvarCtx2 <- newClosedUVarCtx $ Map.fromList
-    [ ("x", uvarTy)
-    , ("y", uvarTy)
+    [ ("x", uvarTy0)
+    , ("y", uvarTy0)
     ]
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
@@ -415,13 +415,13 @@ test2 = printLn ( runUnifyCtxWithoutGeneralizing example2
 
 example3 : UnifyCtx ()
 example3 = do
-  uvarTy <- liftUnifyTy newUVarTy
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarCtx1 <- newClosedUVarCtx $ Map.fromList
-    [ ("x", uvarTy)
+    [ ("x", uvarTy0)
     ]
   uvarCtx2 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", uvarTy)
-    , ("y", uvarTy)
+    [ ("x", uvarTy0)
+    , ("y", uvarTy0)
     ]
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
@@ -436,17 +436,17 @@ test3 = printLn ( runUnifyCtxWithoutGeneralizing example3
 
 example4 : UnifyCtx ()
 example4 = do
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarTy1 <- liftUnifyTy newUVarTy
   uvarTy2 <- liftUnifyTy newUVarTy
   uvarTy3 <- liftUnifyTy newUVarTy
-  uvarTy4 <- liftUnifyTy newUVarTy
   uvarCtx1 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", PImp uvarTy1 uvarTy2)
-    , ("y", uvarTy4)
+    [ ("x", PImp uvarTy0 uvarTy1)
+    , ("y", uvarTy3)
     ]
   uvarCtx2 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", uvarTy4)
-    , ("y", PPar uvarTy2 uvarTy3)
+    [ ("x", uvarTy3)
+    , ("y", PPar uvarTy1 uvarTy2)
     ]
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
@@ -464,16 +464,16 @@ test4 = printLn ( runUnifyCtxWithoutGeneralizing example4
 
 example5 : UnifyCtx (Map String PTy, Map String PTy)
 example5 = do
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarTy1 <- liftUnifyTy newUVarTy
   uvarTy2 <- liftUnifyTy newUVarTy
-  uvarTy3 <- liftUnifyTy newUVarTy
   uvarCtx1 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", PImp uvarTy1 uvarTy2)
-    , ("y", uvarTy1)
+    [ ("x", PImp uvarTy0 uvarTy1)
+    , ("y", uvarTy0)
     ]
   uvarCtx2 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", uvarTy3)
-    , ("y", uvarTy3)
+    [ ("x", uvarTy2)
+    , ("y", uvarTy2)
     ]
 
   unifyUVarCtxs uvarCtx1 uvarCtx2
@@ -496,12 +496,12 @@ test5 = printLn ( runUnifyCtxWithoutGeneralizing example5
 public export
 example6 : UnifyCtx Bool
 example6 = do
-  uvarTy <- liftUnifyTy newUVarTy
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarCtx1 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", uvarTy)
+    [ ("x", uvarTy0)
     ]
   uvarCtx2 <- newClosedUVarCtx $ Map.fromList
-    [ ("x", uvarTy)
+    [ ("x", uvarTy0)
     ]
 
   -- Unify an open context with a closed context
@@ -519,17 +519,17 @@ test6 = printLn ( runUnifyCtxWithoutGeneralizing example6
 public export
 example7 : UnifyCtx ()
 example7 = do
+  uvarTy0 <- liftUnifyTy newUVarTy
   uvarTy1 <- liftUnifyTy newUVarTy
-  uvarTy2 <- liftUnifyTy newUVarTy
 
   -- Create an open context with one variable
   uvarCtx1 <- newOpenUVarCtx $ Map.fromList
-    [ ("x", uvarTy1)
+    [ ("x", uvarTy0)
     ]
 
   -- Create a closed context with one variable
   uvarCtx2 <- newClosedUVarCtx $ Map.fromList
-    [ ("x", uvarTy1)
+    [ ("x", uvarTy0)
     ]
 
   -- Unify the open context with the closed context
@@ -539,7 +539,7 @@ example7 = do
   -- With the bug (closed1 && closed2), this would succeed incorrectly
   -- With the fix (closed1 || closed2), this should fail
   uvarCtx3 <- newOpenUVarCtx $ Map.fromList
-    [ ("y", uvarTy2)
+    [ ("y", uvarTy1)
     ]
 
   unifyUVarCtxs uvarCtx1 uvarCtx3
