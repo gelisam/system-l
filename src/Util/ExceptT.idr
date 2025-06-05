@@ -6,6 +6,8 @@
 module Util.ExceptT
 
 import Control.Monad.Identity
+import Control.Monad.Reader
+import Control.Monad.State
 import Control.Monad.Trans
 
 import Util.MapT
@@ -71,3 +73,26 @@ implementation MonadTrans (ExceptT e) where
 public export
 implementation {e : Type} -> MapT (ExceptT e) where
   mapT f (MkExceptT body) = MkExceptT (f body)
+
+----------------------------------------
+
+public export
+interface Monad m => MonadExcept e m where
+  liftExcept : Except e a -> m a
+
+public export
+implementation Monad m => MonadExcept e (ExceptT e m) where
+  liftExcept body = MkExceptT $ do
+    case runExcept body of
+      Left e => do
+        pure $ Left e
+      Right a => do
+        pure $ Right a
+
+public export
+implementation MonadExcept e m => MonadExcept e (StateT s m) where
+  liftExcept = lift . liftExcept
+
+public export
+implementation MonadExcept e m => MonadExcept e (ReaderT r m) where
+  liftExcept body = lift $ liftExcept body
