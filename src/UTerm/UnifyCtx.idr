@@ -35,7 +35,7 @@ import Util.These
 
 public export
 data UnifyCtxError
-  = ContextCannotHaveVariable UVarCtx String
+  = VariableAddedToClosedContext String UVarCtx
   | UnifyTyError UnifyTyError
 
 Impl : (Type -> Type) -> Type -> Type
@@ -169,7 +169,7 @@ insertImpl uvarCtx x pty = do
     Nothing => do
       -- Can't add new variable if the context is closed
       when closed $ do
-        throwE $ ContextCannotHaveVariable uvarCtx x
+        throwE $ VariableAddedToClosedContext x uvarCtx
 
       -- We can add the new variable
       liftUnionFind $ setValue uvarCtx $ Just $ MkPContext
@@ -216,7 +216,7 @@ unifyUVarCtxsImpl uvarCtx1 uvarCtx2 = do
 
 public export
 showUnifyCtxError : UnifyCtxError -> String
-showUnifyCtxError (ContextCannotHaveVariable (MkNode i) var) =
+showUnifyCtxError (VariableAddedToClosedContext var (MkNode i)) =
   "Context ??" ++ show i ++ " cannot have variable " ++ show var
 showUnifyCtxError (UnifyTyError e) =
   showUnifyTyError e
@@ -304,16 +304,16 @@ implementation MonadUnifyCtx m => MonadUnifyCtx (ExceptT e m) where
 
 public export
 implementation Show UnifyCtxError where
-  showPrec p (ContextCannotHaveVariable (MkNode i) var)
+  showPrec p (VariableAddedToClosedContext var (MkNode i))
     = showParens (p /= Open)
-    $ "ContextCannotHaveVariable (MkNode " ++ show i ++ ") " ++ showPrec App var
+    $ "VariableAddedToClosedContext " ++ showPrec App var ++ " (MkNode " ++ show i ++ ")"
   showPrec p (UnifyTyError e)
     = showParens (p /= Open)
     $ "UnifyTyError " ++ showPrec App e
 
 public export
 implementation Eq UnifyCtxError where
-  ContextCannotHaveVariable node1 var1 == ContextCannotHaveVariable node2 var2
+  VariableAddedToClosedContext var1 node1 == VariableAddedToClosedContext var2 node2
     = node1 == node2 && var1 == var2
   UnifyTyError e1 == UnifyTyError e2
     = e1 == e2
@@ -430,7 +430,7 @@ public export
 test3 : IO ()
 test3 = printLn ( runUnifyCtxWithoutGeneralizing example3
                == ( Left
-                  $ ContextCannotHaveVariable (MkNode 0) "y"
+                  $ VariableAddedToClosedContext "y" (MkNode 0)
                   )
                 )
 
@@ -548,6 +548,6 @@ public export
 test7 : IO ()
 test7 = printLn ( runUnifyCtxWithoutGeneralizing example7
                == ( Left
-                  $ ContextCannotHaveVariable (MkNode 0) "y"
+                  $ VariableAddedToClosedContext "y" (MkNode 0)
                   )
                 )

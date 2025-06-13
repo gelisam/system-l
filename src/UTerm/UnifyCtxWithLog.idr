@@ -210,5 +210,5 @@ example2 = do
 public export
 test2 : IO ()
 test2 = printLn ( execTest example2
-               == Left (ContextCannotHaveVariable (MkNode 0) "x")
+               == Left (VariableAddedToClosedContext "x" (MkNode 0))
                 )
