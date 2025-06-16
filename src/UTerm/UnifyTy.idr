@@ -5,6 +5,7 @@
 -- equal according to the typing rules really are equal.
 module UTerm.UnifyTy
 
+import Control.Monad.Reader
 import Control.Monad.State
 
 import Ty
@@ -398,6 +399,10 @@ implementation Monad m => MonadUnifyTy (UnifyTyT m) where
             throwE e
           Right a => do
             pure a
+
+public export
+implementation MonadUnifyTy m => MonadUnifyTy (ReaderT r m) where
+  liftUnifyTy = lift . liftUnifyTy
 
 public export
 implementation MonadUnifyTy m => MonadUnifyTy (StateT s m) where

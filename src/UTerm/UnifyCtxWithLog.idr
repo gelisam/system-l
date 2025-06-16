@@ -87,6 +87,7 @@ implementation Monad m => MonadObserveCtx (UnifyCtxWithLogT m) where
 -- Note that newUVarCtx is not provided: it is only possible to provide more
 -- information about the existing UVarCtx, not to deepen the mystery.
 
+-- Similar to Map.insert. Fails if the context is closed.
 -- Logs an 'Added' event if the variable was not previously in the context.
 public export
 insert
@@ -109,6 +110,7 @@ insert uvarCtx x pty = MkUnifyCtxWithLogT $ do
     Nothing => do
       modify (\events => (Added uvarCtx x) :: events)
 
+-- Closes a context, preventing further variables from being added.
 -- Logs a 'Closed' event if the context was not previously closed.
 public export
 close

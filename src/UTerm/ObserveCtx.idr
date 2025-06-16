@@ -3,6 +3,7 @@
 module UTerm.ObserveCtx
 
 import Control.Monad.Identity
+import Control.Monad.Reader
 import Control.Monad.State
 
 import Data.SortedMap as Map
@@ -120,6 +121,11 @@ implementation MonadObserveCtx ObserveCtx where
 
 public export
 implementation MonadObserveCtx m => MonadObserveCtx (ExceptT e m) where
+  liftObserveCtx body = do
+    lift $ liftObserveCtx body
+
+public export
+implementation MonadObserveCtx m => MonadObserveCtx (ReaderT r m) where
   liftObserveCtx body = do
     lift $ liftObserveCtx body
 
