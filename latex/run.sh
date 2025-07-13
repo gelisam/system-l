@@ -11,7 +11,7 @@ convert_file() {
     local file=$1
     echo "Processing $file.tex..."
     pdflatex -halt-on-error "$file.tex"
-    magick -density 150 "$file.pdf" -quality 90 "$file.png"
+    convert -density 150 "$file.pdf" -quality 90 "$file.png"
     echo "Created $file.png"
 }
 
