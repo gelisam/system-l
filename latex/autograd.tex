@@ -1,0 +1,97 @@
+\documentclass{article}
+\usepackage[paperwidth=8in,paperheight=11in,margin=0.5in]{geometry}
+\usepackage{mathtools}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{trfrac}
+
+% --- Custom commands ---
+\newcommand{\letin}[3]{\mathbf{let}\ #1 = #2\ \mathbf{in}\ #3}
+\newcommand{\relu}[1]{\mathbf{relu}(#1)}
+\newcommand{\tanhh}[1]{\mathbf{tanh}(#1)}
+\newcommand{\valid}{\ \mathbf{valid}}
+\newcommand{\kwif}{\mathbf{if}\ }
+\newcommand{\kwand}{\ \mathbf{and}\ }
+
+\begin{document}
+
+\section*{Syntactic categories}
+
+\[
+\begin{array}{rcl}
+e & \Coloneqq & w \mid x \mid \letin{x}{e}{e} \mid e + e \mid w * e \mid \relu{e} \mid \tanhh{e} \\
+W & \Coloneqq & \cdot \mid W, w = v \\
+E & \Coloneqq & \cdot \mid E, x = v \\
+R & \Coloneqq & \cdot \mid R, x \in [v, v] \\
+W' & \Coloneqq & \cdot \mid W', w \mathrel{+}= v \\
+E' & \Coloneqq & \cdot \mid E', x \mathrel{+}= v \\
+R' & \Coloneqq & \cdot \mid R', x \mathrel{+}= [v, v]
+\end{array}
+\]
+
+\section*{Example program}
+
+\[
+\begin{array}{l}
+\text{in}_1, \text{in}_2 \vdash \\
+\quad \mathbf{let}\ x_{11} = \relu{w_{111} * \text{in}_1 + w_{112} * \text{in}_2 + b_{11}} \ \mathbf{in} \\
+\quad \mathbf{let}\ x_{12} = \relu{w_{121} * \text{in}_1 + w_{122} * \text{in}_2 + b_{12}} \ \mathbf{in} \\
+\\
+\quad \mathbf{let}\ x_{21} = \relu{w_{211} * \text{in}_1 + w_{212} * \text{in}_2 + b_{21}} \ \mathbf{in} \\
+\quad \mathbf{let}\ x_{22} = \relu{w_{221} * \text{in}_1 + w_{222} * \text{in}_2 + b_{22}} \ \mathbf{in} \\
+\\
+\quad \relu{w_{31} * \text{in}_1 + w_{32} * \text{in}_2 + b_3}
+\end{array}
+\]
+
+\section*{Judgments}
+
+\begin{gather*}
+[ R \valid ] \\
+[ W; E \vdash e \rightarrow v ] \\
+[ W; E \vdash e \mathrel{+}= v \Rightarrow W'; E' ] \\
+[ W; R \Vdash e \rightarrow [v, v] ] \\
+[ W; R \Vdash e \mathrel{+}= [v, v] \Rightarrow W'; R' ]
+\end{gather*}
+
+\section*{Inference rules}
+
+\[
+\trfrac
+  {R \valid \qquad v_1 \le v_2}
+  {R, x \in [v_1, v_2] \valid}
+\]
+
+\vspace{2em}
+
+\[
+\trfrac
+  {W; E \vdash w_1 \rightarrow v_1 \quad W; E \vdash e_2 \rightarrow v_2 \quad W; E \vdash w_1 \mathrel{+}= v_2 \cdot \Delta v \Rightarrow W'_1; E'_1 \quad W; E \vdash e_2 \mathrel{+}= v_1 \cdot \Delta v \Rightarrow W'_2; E'_2}
+  {W; E \vdash w_1*e_2 \mathrel{+}= \Delta v \Rightarrow (W'_1 \mid W'_2); (E'_1 \mid E'_2)}
+\]
+
+\vspace{2em}
+
+\[
+(W'_1, w \mathrel{+}= v_1) \mid (W'_2, w \mathrel{+}= v_2) = (W'_1 \mid W'_2), w \mathrel{+}= (v_1 + v_2) \ \kwif w \notin W'_1 \kwand w \notin W'_2
+\]
+
+\vspace{2em}
+
+\[
+\trfrac
+  {W \vdash w_1 \rightarrow v_1 \quad W; R \Vdash e_2 \rightarrow [\text{lo}_2, \text{hi}_2] \quad W; R \Vdash w_1 \mathrel{+}= [\text{lo}_2 \cdot \Delta\text{lo}, \text{hi}_2 \cdot \Delta\text{hi}] \Rightarrow W'_1; R'_1 \quad W; R \Vdash e_2 \mathrel{+}= v_1 \cdot [\Delta\text{lo}, \Delta\text{hi}] \Rightarrow W'_2; R'_2}
+  {W; R \Vdash w_1*e_2 \mathrel{+}= [\Delta\text{lo}, \Delta\text{hi}] \Rightarrow (W'_1 \mid W'_2) ; (R'_1 \mid R'_2)}
+\]
+
+\vspace{2em}
+
+\[
+v \cdot [\text{lo}, \text{hi}] =
+\begin{cases}
+  [\text{lo}, \text{hi}] & \kwif v \ge 0 \\
+  [\text{hi}, \text{lo}] & \kwif v < 0
+\end{cases}
+\]
+
+\end{document}

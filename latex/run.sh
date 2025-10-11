@@ -4,14 +4,14 @@ set -e
 clear
 
 # List of all LaTeX files
-FILES=("syntax" "rules" "example-swap" "example-swap-simplified" "example-curry")
+FILES=("syntax" "rules" "example-swap" "example-swap-simplified" "example-curry" "autograd")
 
 # Function to convert a single file
 convert_file() {
     local file=$1
     echo "Processing $file.tex..."
     pdflatex -halt-on-error "$file.tex"
-    convert -density 150 "$file.pdf" -quality 90 "$file.png"
+    convert -density 150 "$file.pdf" -background white -alpha remove -quality 90 "$file.png"
     echo "Created $file.png"
 }
 
